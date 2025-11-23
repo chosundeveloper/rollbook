@@ -1,19 +1,43 @@
 {
   "accounts": [
     {
-      "id": "admin",
+      "id": "d9364887-c3e2-4efd-8b8b-5aef0f9a1687",
       "username": "admin",
-      "displayName": "담당자",
-      "passwordHash": "$2a$10$JfBpO7SxLH018Zf5RSwqmeqqwvCuMaAhQ/cLC9nn7XrgZ28I/rkoO",
-      "roles": ["admin"]
+      "displayName": "관리자",
+      "passwordHash": "$2a$10$/5QX9KSWdd9LCxAPpRUOzu66RpP7mkIg4YIMS7oyEoboiD8BlKGwC",
+      "roles": [
+        "admin"
+      ]
     },
     {
-      "id": "cellleader-grace",
-      "username": "cellleader-grace",
-      "displayName": "은혜셀장",
-      "passwordHash": "$2a$10$rdlqqexAk9G.MOirTKJhNel1D3fSEG6s3ZQ49fT5WB24f7mT/Y6Wm",
-      "roles": ["leader"],
-      "cellId": "cell-grace"
+      "id": "9b7185e1-e17b-4aa4-b693-014843c5768b",
+      "username": "lee",
+      "displayName": "이 리더",
+      "passwordHash": "$2a$10$KLU9H/NoQLw0mE1FRLiPYObYhGCItg.hlyTxgBAhlCheKK7x.r9w2",
+      "roles": [
+        "leader"
+      ],
+      "cellId": "cell-lee"
+    },
+    {
+      "id": "32ac267a-108c-455c-985b-d0b68aabe5f4",
+      "username": "kim",
+      "displayName": "김 리더",
+      "passwordHash": "$2a$10$KLU9H/NoQLw0mE1FRLiPYObYhGCItg.hlyTxgBAhlCheKK7x.r9w2",
+      "roles": [
+        "leader"
+      ],
+      "cellId": "cell-kim"
+    },
+    {
+      "id": "dd345418-33ba-4483-a39e-c50b908d039b",
+      "username": "jung",
+      "displayName": "정 리더",
+      "passwordHash": "$2a$10$KLU9H/NoQLw0mE1FRLiPYObYhGCItg.hlyTxgBAhlCheKK7x.r9w2",
+      "roles": [
+        "leader"
+      ],
+      "cellId": "cell-jung"
     }
   ]
 }

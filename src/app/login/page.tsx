@@ -40,6 +40,7 @@ function LoginForm() {
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg"
+        autoComplete="on"
       >
         <h1 className="text-2xl font-semibold text-slate-800">2청년부 출석부</h1>
         <p className="mt-2 text-sm text-slate-500">부여된 아이디와 비밀번호로 로그인하세요.</p>
@@ -48,11 +49,13 @@ function LoginForm() {
         </label>
         <input
           id="username"
+          name="username"
           type="text"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
           placeholder="example"
+          autoComplete="username"
           required
         />
         <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="password">
@@ -60,11 +63,13 @@ function LoginForm() {
         </label>
         <input
           id="password"
+          name="password"
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
           placeholder="********"
+          autoComplete="current-password"
           required
         />
         {error && (
