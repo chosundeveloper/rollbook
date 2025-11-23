@@ -47,7 +47,7 @@ export async function getCellsWithMembers(): Promise<HydratedCell[]> {
 
   return cells.map((cell) => ({
     ...cell,
-    roster: cell.members.map((assignment) => ({
+    roster: (cell.members || []).map((assignment) => ({
       role: assignment.role,
       member: memberMap.get(assignment.memberId),
     })),

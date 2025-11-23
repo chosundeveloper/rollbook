@@ -73,5 +73,6 @@ export interface CellRecord {
   id: string;
   name: string;
   description?: string;
-  members: CellMemberAssignment[];
+  members?: CellMemberAssignment[];
+  leaderId?: string;
 }

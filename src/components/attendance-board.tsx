@@ -917,21 +917,23 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
       </p>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          onClick={handleDownloadPdf}
-          disabled={!selectedDate}
-          className="rounded-md border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          PDF 다운로드
-        </button>
+        {mode === "admin" && (
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={!selectedDate}
+            className="rounded-md border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            PDF 다운로드
+          </button>
+        )}
         <button
           type="button"
           onClick={handleSave}
           disabled={saving || !selectedDate}
           className="rounded-md bg-sky-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {saving ? "저장 중..." : "출석 저장"}
+          {saving ? "저장 중..." : mode === "admin" ? "출석 저장" : "출석 제출"}
         </button>
       </div>
     </section>

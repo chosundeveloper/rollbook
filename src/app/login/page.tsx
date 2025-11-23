@@ -14,21 +14,28 @@ function LoginForm() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    console.log("Form submitted, username:", username);
     setLoading(true);
     setError(null);
     try {
+      console.log("Sending request to /api/session");
       const response = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
+      console.log("Response status:", response.status);
       if (!response.ok) {
         const data = await response.json().catch(() => ({ message: "로그인 실패" }));
         throw new Error(data.message || "로그인 실패");
       }
-      router.push(nextUrl);
+      const data = await response.json();
+      console.log("Login success:", data);
+      console.log("Redirecting to:", nextUrl);
+      window.location.href = nextUrl;
     } catch (err) {
+      console.error("Login error:", err);
       setError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
     } finally {
       setLoading(false);
