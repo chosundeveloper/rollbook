@@ -11,6 +11,7 @@ export interface AccountRecord {
   displayName?: string;
   passwordHash: string;
   roles?: string[];
+  cellId?: string;
 }
 
 interface UsersFile {

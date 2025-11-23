@@ -8,7 +8,8 @@ import { getAccountByUsername } from "@/lib/user-store";
 export default async function CellPage() {
   let cellId: string | undefined;
   if (isAuthEnabled()) {
-    const cookieValue = cookies().get(SESSION_COOKIE_NAME)?.value;
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     const session = parseSessionToken(cookieValue);
     if (!session) {
       redirect("/login");

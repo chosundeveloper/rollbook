@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, parseSessionToken } from "@/lib/session";
 import { isAuthEnabled } from "@/lib/auth";
 
-export default function Home() {
+export default async function Home() {
   if (isAuthEnabled()) {
-    const cookieValue = cookies().get(SESSION_COOKIE_NAME)?.value;
+    const cookieStore = await cookies();
+    const cookieValue = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     const session = parseSessionToken(cookieValue);
     if (!session) {
       redirect("/login");
