@@ -1,0 +1,79 @@
+name: Manual Deploy with Options
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      rebuild:
+        description: 'Force rebuild Docker image'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to ${{ inputs.environment }}
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          ROLLBOOK_SESSION_SECRET: ${{ secrets.ROLLBOOK_SESSION_SECRET }}
+          REBUILD: ${{ inputs.rebuild }}
+        run: |
+          echo "🚀 Deploying to ${{ inputs.environment }} environment..."
+
+          ssh ${SERVER_USER}@${SERVER_HOST} "mkdir -p ${SERVER_PATH}"
+
+          rsync -avz --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            --exclude 'data' \
+            ./ ${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/
+
+          ssh ${SERVER_USER}@${SERVER_HOST} << EOF
+            cd ${SERVER_PATH}
+            echo "ROLLBOOK_SESSION_SECRET=${ROLLBOOK_SESSION_SECRET}" > .env
+            echo "NEXT_PUBLIC_AUTH_DISABLED=false" >> .env
+
+            if [ ! -d "data" ]; then
+              mkdir -p data
+            fi
+
+            docker-compose down
+
+            if [ "${REBUILD}" = "true" ]; then
+              echo "🔨 Rebuilding Docker image..."
+              docker-compose up -d --build --force-recreate
+            else
+              echo "♻️  Restarting containers..."
+              docker-compose up -d
+            fi
+
+            echo "✅ Deployment complete!"
+            docker-compose ps
+            docker-compose logs --tail=30
+          EOF

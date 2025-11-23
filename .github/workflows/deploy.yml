@@ -1,0 +1,81 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 푸시하면 자동 배포
+  workflow_dispatch:  # 수동 배포도 가능
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          ROLLBOOK_SESSION_SECRET: ${{ secrets.ROLLBOOK_SESSION_SECRET }}
+        run: |
+          echo "🚀 Deploying to ${SERVER_HOST}..."
+
+          # 서버에 디렉토리 생성
+          ssh ${SERVER_USER}@${SERVER_HOST} "mkdir -p ${SERVER_PATH}"
+
+          # 파일 전송 (rsync)
+          rsync -avz --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.git' \
+            --exclude 'data' \
+            --exclude 'deployment/traefik-data/acme.json' \
+            --exclude '.github' \
+            ./ ${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/
+
+          # .env 파일 생성
+          ssh ${SERVER_USER}@${SERVER_HOST} << EOF
+            cd ${SERVER_PATH}
+            echo "ROLLBOOK_SESSION_SECRET=${ROLLBOOK_SESSION_SECRET}" > .env
+            echo "NEXT_PUBLIC_AUTH_DISABLED=false" >> .env
+          EOF
+
+          # Docker 빌드 및 배포
+          ssh ${SERVER_USER}@${SERVER_HOST} << 'EOF'
+            cd ${SERVER_PATH}
+
+            # data 디렉토리 초기화 (초기 배포시만)
+            if [ ! -d "data" ]; then
+              echo "📋 Initializing data directory..."
+              mkdir -p data
+            fi
+
+            # Docker 컨테이너 재배포
+            docker-compose down
+            docker-compose up -d --build
+
+            echo "✅ Deployment complete!"
+            docker-compose ps
+          EOF
+
+      - name: Check deployment status
+        env:
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+        run: |
+          echo "📋 Checking deployment status..."
+          ssh ${SERVER_USER}@${SERVER_HOST} "cd ${SERVER_PATH} && docker-compose logs --tail=50"

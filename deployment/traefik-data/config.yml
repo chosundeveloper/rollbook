@@ -1,0 +1,18 @@
+http:
+  middlewares:
+    # 보안 헤더
+    secure-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+
+    # Rate limiting (DDoS 방지)
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50

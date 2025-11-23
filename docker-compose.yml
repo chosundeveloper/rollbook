@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  rollbook:
+    build: .
+    container_name: rollbook
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    environment:
+      - ROLLBOOK_SESSION_SECRET=${ROLLBOOK_SESSION_SECRET:-change-this-secret}
+      - NEXT_PUBLIC_AUTH_DISABLED=${NEXT_PUBLIC_AUTH_DISABLED:-false}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rollbook.rule=Host(`rollbook.yourdomain.com`)"
+      - "traefik.http.routers.rollbook.entrypoints=websecure"
+      - "traefik.http.routers.rollbook.tls.certresolver=letsencrypt"
+      - "traefik.http.services.rollbook.loadbalancer.server.port=3000"
+    networks:
+      - traefik-network
+
+networks:
+  traefik-network:
+    external: true
