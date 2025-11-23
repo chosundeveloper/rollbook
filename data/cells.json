@@ -1,0 +1,37 @@
+{
+  "cells": [
+    {
+      "id": "cell-grace",
+      "name": "은혜셀",
+      "description": "시온홀 주일 2부",
+      "members": [
+        { "memberId": "mem-jiho", "role": "leader" },
+        { "memberId": "mem-sena", "role": "subleader" },
+        { "memberId": "mem-minsu", "role": "member" },
+        { "memberId": "mem-jiyoung", "role": "member" }
+      ]
+    },
+    {
+      "id": "cell-hope",
+      "name": "소망셀",
+      "description": "온라인 목장",
+      "members": [
+        { "memberId": "mem-yoona", "role": "leader" },
+        { "memberId": "mem-daniel", "role": "subleader" },
+        { "memberId": "mem-sarang", "role": "member" },
+        { "memberId": "mem-joon", "role": "member" }
+      ]
+    },
+    {
+      "id": "cell-light",
+      "name": "빛셀",
+      "description": "신규 청년 중심 소그룹",
+      "members": [
+        { "memberId": "mem-yoona", "role": "leader" },
+        { "memberId": "mem-daniel", "role": "subleader" },
+        { "memberId": "mem-sarang", "role": "member" },
+        { "memberId": "mem-joon", "role": "member" }
+      ]
+    }
+  ]
+}

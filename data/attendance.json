@@ -1,0 +1,53 @@
+{
+  "entries": [
+    {
+      "id": "att-812a08f5-f848-44dd-a110-047a689031cc",
+      "date": "2025-11-24",
+      "status": "absent",
+      "memberId": "mem-jiho",
+      "displayName": "Jiho Park",
+      "isVisitor": false,
+      "createdAt": "2025-11-23T14:15:59.663Z",
+      "updatedAt": "2025-11-23T14:15:59.663Z"
+    },
+    {
+      "id": "att-b331f099-36fb-49a3-b536-19804cbc16f0",
+      "date": "2025-11-24",
+      "status": "absent",
+      "memberId": "mem-sena",
+      "displayName": "Sena Choi",
+      "isVisitor": false,
+      "createdAt": "2025-11-23T14:15:59.663Z",
+      "updatedAt": "2025-11-23T14:15:59.663Z"
+    },
+    {
+      "id": "att-e2471381-8008-4220-baf1-da88c73f39f7",
+      "date": "2025-11-24",
+      "status": "absent",
+      "memberId": "mem-minsu",
+      "displayName": "Minsu Lee",
+      "isVisitor": false,
+      "createdAt": "2025-11-23T14:15:59.663Z",
+      "updatedAt": "2025-11-23T14:15:59.663Z"
+    },
+    {
+      "id": "att-3b5a24bf-2115-4627-9e5b-9a0fe5489908",
+      "date": "2025-11-24",
+      "status": "absent",
+      "memberId": "mem-jiyoung",
+      "displayName": "Jiyoung Kim",
+      "isVisitor": false,
+      "createdAt": "2025-11-23T14:15:59.663Z",
+      "updatedAt": "2025-11-23T14:15:59.663Z"
+    },
+    {
+      "id": "att-d6ccaf52-2f45-4cf9-b315-7851cb9d820b",
+      "date": "2025-11-24",
+      "status": "online",
+      "displayName": "dd",
+      "isVisitor": true,
+      "createdAt": "2025-11-23T14:15:59.663Z",
+      "updatedAt": "2025-11-23T14:15:59.663Z"
+    }
+  ]
+}

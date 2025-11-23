@@ -1,0 +1,19 @@
+{
+  "accounts": [
+    {
+      "id": "admin",
+      "username": "admin",
+      "displayName": "담당자",
+      "passwordHash": "$2a$10$JfBpO7SxLH018Zf5RSwqmeqqwvCuMaAhQ/cLC9nn7XrgZ28I/rkoO",
+      "roles": ["admin"]
+    },
+    {
+      "id": "cellleader-grace",
+      "username": "cellleader-grace",
+      "displayName": "은혜셀장",
+      "passwordHash": "$2a$10$rdlqqexAk9G.MOirTKJhNel1D3fSEG6s3ZQ49fT5WB24f7mT/Y6Wm",
+      "roles": ["leader"],
+      "cellId": "cell-grace"
+    }
+  ]
+}

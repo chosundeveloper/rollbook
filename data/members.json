@@ -1,0 +1,76 @@
+{
+  "members": [
+    {
+      "id": "mem-jiho",
+      "name": "Jiho Park",
+      "team": "Team Grace",
+      "contact": "010-1111-1111",
+      "isActive": true,
+      "role": "lead",
+      "joinedAt": "2021-02-14"
+    },
+    {
+      "id": "mem-sena",
+      "name": "Sena Choi",
+      "team": "Team Grace",
+      "contact": "010-2222-2222",
+      "isActive": true,
+      "role": "scribe",
+      "joinedAt": "2022-05-08"
+    },
+    {
+      "id": "mem-minsu",
+      "name": "Minsu Lee",
+      "team": "Team Hope",
+      "contact": "010-3333-3333",
+      "isActive": true,
+      "role": "member",
+      "joinedAt": "2020-09-27"
+    },
+    {
+      "id": "mem-jiyoung",
+      "name": "Jiyoung Kim",
+      "team": "Team Hope",
+      "contact": "010-4444-4444",
+      "isActive": true,
+      "role": "member",
+      "joinedAt": "2019-11-10"
+    },
+    {
+      "id": "mem-yoona",
+      "name": "Yoona Han",
+      "team": "Team Light",
+      "contact": "010-5555-5555",
+      "isActive": true,
+      "role": "member",
+      "joinedAt": "2023-03-12"
+    },
+    {
+      "id": "mem-daniel",
+      "name": "Daniel Jung",
+      "team": "Team Light",
+      "contact": "010-6666-6666",
+      "isActive": true,
+      "role": "member",
+      "joinedAt": "2021-12-05"
+    },
+    {
+      "id": "mem-sarang",
+      "name": "Sarang Yoo",
+      "team": "Team Wave",
+      "contact": "010-7777-7777",
+      "isActive": true,
+      "role": "member",
+      "joinedAt": "2024-04-07"
+    },
+    {
+      "id": "mem-joon",
+      "name": "Joonseo Ahn",
+      "team": "Team Wave",
+      "contact": "010-8888-8888",
+      "isActive": true,
+      "role": "member",
+      "joinedAt": "2022-08-21"
+    }
+  ]
+}
