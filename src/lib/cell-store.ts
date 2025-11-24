@@ -53,3 +53,81 @@ export async function getCellsWithMembers(): Promise<HydratedCell[]> {
     })),
   }));
 }
+
+function createId(): string {
+  return `cell-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+async function writeCellsFile(file: CellsFile): Promise<void> {
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(cellsFilePath, JSON.stringify(file, null, 2), "utf-8");
+}
+
+export async function createCell(name: string, description?: string): Promise<CellRecord> {
+  const file = await readCellsFile();
+  const cell: CellRecord = {
+    id: createId(),
+    name,
+    description,
+    members: [],
+  };
+  file.cells.push(cell);
+  await writeCellsFile(file);
+  return cell;
+}
+
+export async function updateCell(id: string, name: string, description?: string): Promise<CellRecord | null> {
+  const file = await readCellsFile();
+  const index = file.cells.findIndex((c) => c.id === id);
+  if (index === -1) return null;
+
+  file.cells[index] = {
+    ...file.cells[index],
+    name,
+    description,
+  };
+  await writeCellsFile(file);
+  return file.cells[index];
+}
+
+export async function deleteCell(id: string): Promise<boolean> {
+  const file = await readCellsFile();
+  const index = file.cells.findIndex((c) => c.id === id);
+  if (index === -1) return false;
+
+  file.cells.splice(index, 1);
+  await writeCellsFile(file);
+  return true;
+}
+
+export async function addMemberToCell(
+  cellId: string,
+  memberId: string,
+  role: CellRole
+): Promise<CellRecord | null> {
+  const file = await readCellsFile();
+  const cell = file.cells.find((c) => c.id === cellId);
+  if (!cell) return null;
+
+  if (!cell.members) cell.members = [];
+
+  // Remove if already exists (to update role)
+  cell.members = cell.members.filter((m) => m.memberId !== memberId);
+  cell.members.push({ memberId, role });
+
+  await writeCellsFile(file);
+  return cell;
+}
+
+export async function removeMemberFromCell(cellId: string, memberId: string): Promise<boolean> {
+  const file = await readCellsFile();
+  const cell = file.cells.find((c) => c.id === cellId);
+  if (!cell || !cell.members) return false;
+
+  const before = cell.members.length;
+  cell.members = cell.members.filter((m) => m.memberId !== memberId);
+  if (cell.members.length === before) return false;
+
+  await writeCellsFile(file);
+  return true;
+}

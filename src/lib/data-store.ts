@@ -78,7 +78,7 @@ export async function addMember(payload: NewMemberPayload): Promise<Member> {
     contact: payload.contact?.trim() || undefined,
     role: payload.role?.trim() || undefined,
     isActive: true,
-    joinedAt: now.toISOString().slice(0, 10),
+    joinedAt: payload.joinedAt?.trim() || now.toISOString().slice(0, 10),
   };
 
   members.members.push(newMember);

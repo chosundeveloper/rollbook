@@ -47,6 +47,7 @@ export interface NewMemberPayload {
   team?: string;
   contact?: string;
   role?: string;
+  joinedAt?: string;
 }
 
 export interface AttendanceSession {

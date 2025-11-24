@@ -590,6 +590,34 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
           ) : (
             <p className="text-sm text-rose-600">아직 생성된 출석부가 없습니다.</p>
           )}
+          <a
+            href={mode === "admin" ? "/admin/prayer" : "/cell/prayer"}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 text-center transition hover:border-slate-500"
+          >
+            기도회 관리
+          </a>
+          {mode === "admin" && (
+            <>
+              <a
+                href="/admin/members"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 text-center transition hover:border-slate-500"
+              >
+                교인 관리
+              </a>
+              <a
+                href="/admin/cells"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 text-center transition hover:border-slate-500"
+              >
+                셀 관리
+              </a>
+              <a
+                href="/admin/users"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 text-center transition hover:border-slate-500"
+              >
+                계정 관리
+              </a>
+            </>
+          )}
           {authEnabled && (
             <button
               type="button"
