@@ -117,23 +117,12 @@ export default function AdminSessionsPage() {
           <h1 className="text-2xl font-semibold">출석부 관리</h1>
           <p className="text-sm text-slate-600">출석부를 생성하고 관리하세요.</p>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href="/admin"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-          >
-            대시보드
-          </Link>
-          {authEnabled && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-            >
-              로그아웃
-            </button>
-          )}
-        </div>
+        <Link
+          href="/admin"
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+        >
+          홈으로
+        </Link>
       </header>
 
       {/* Messages */}

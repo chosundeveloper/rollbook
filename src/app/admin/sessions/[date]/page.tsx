@@ -171,7 +171,7 @@ export default function SessionDetailPage() {
           {error}
         </div>
         <Link href="/admin" className="text-sm text-sky-600 hover:underline">
-          ← 대시보드로 돌아가기
+          ← 홈으로 돌아가기
         </Link>
       </section>
     );
@@ -203,7 +203,7 @@ export default function SessionDetailPage() {
             href="/admin"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
           >
-            대시보드
+            홈으로
           </Link>
         </div>
       </header>

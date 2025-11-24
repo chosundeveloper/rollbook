@@ -157,23 +157,12 @@ export default function AdminPrayerPage() {
             기도회를 생성하면 각 셀장이 셀원별 기도 체크리스트를 작성할 수 있습니다.
           </p>
         </div>
-        <div className="flex gap-2">
-          <a
-            href="/admin"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-          >
-            홈으로 이동
-          </a>
-          {authEnabled && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-            >
-              로그아웃
-            </button>
-          )}
-        </div>
+        <a
+          href="/admin"
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+        >
+          홈으로
+        </a>
       </header>
 
       {/* Create Form */}

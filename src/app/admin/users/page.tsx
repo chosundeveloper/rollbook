@@ -229,35 +229,12 @@ export default function AdminAccountsPage() {
           <h1 className="text-2xl font-semibold">계정 관리</h1>
           <p className="text-sm text-slate-600">로그인 계정을 관리하세요.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href="/admin"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-          >
-            출석부
-          </a>
-          <a
-            href="/admin/members"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-          >
-            교인 관리
-          </a>
-          <a
-            href="/admin/cells"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-          >
-            셀 관리
-          </a>
-          {authEnabled && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-            >
-              로그아웃
-            </button>
-          )}
-        </div>
+        <a
+          href="/admin"
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+        >
+          홈으로
+        </a>
       </header>
 
       {/* Messages */}
