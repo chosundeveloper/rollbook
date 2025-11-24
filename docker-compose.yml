@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   rollbook:
     build: .
@@ -10,6 +8,12 @@ services:
     environment:
       - ROLLBOOK_SESSION_SECRET=${ROLLBOOK_SESSION_SECRET:-change-this-secret}
       - NEXT_PUBLIC_AUTH_DISABLED=${NEXT_PUBLIC_AUTH_DISABLED:-false}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/login"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.rollbook.rule=PathPrefix(`/`)"
