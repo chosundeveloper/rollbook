@@ -708,6 +708,34 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
               >
                 계정 관리
               </Link>
+              <Link
+                href="/docs"
+                className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 text-center transition hover:border-amber-400 hover:bg-amber-100"
+              >
+                📖 사용법
+              </Link>
+              <Link
+                href="/bugs"
+                className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700 text-center transition hover:border-rose-400 hover:bg-rose-100"
+              >
+                🐛 버그 리포트
+              </Link>
+            </>
+          )}
+          {mode === "cell" && (
+            <>
+              <Link
+                href="/docs"
+                className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-700 text-center transition hover:border-amber-400 hover:bg-amber-100"
+              >
+                📖 사용법
+              </Link>
+              <Link
+                href="/bugs"
+                className="rounded-md border border-rose-300 bg-rose-50 px-3 py-2 text-sm text-rose-700 text-center transition hover:border-rose-400 hover:bg-rose-100"
+              >
+                🐛 버그 리포트
+              </Link>
             </>
           )}
           {authEnabled && (
