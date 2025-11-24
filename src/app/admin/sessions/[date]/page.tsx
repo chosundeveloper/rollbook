@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AUTH_DISABLED } from "@/lib/auth";
 import type { AttendanceEntry, AttendanceSession, CellRecord } from "@/types/attendance";
-import { jsPDF } from "jspdf";
 
 interface CellWithAttendance {
   cell: CellRecord;
@@ -29,7 +28,6 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [downloading, setDownloading] = useState(false);
 
   const handleAuthFailure = useCallback(() => {
     if (!authEnabled) return;
@@ -143,95 +141,8 @@ export default function SessionDetailPage() {
     loadData();
   }, [loadData]);
 
-  const handleDownloadPDF = () => {
-    setDownloading(true);
-    try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      // 한글 폰트 대신 기본 폰트 사용 (영문/숫자만 제대로 표시)
-      // 한글은 유니코드로 처리
-      let y = 20;
-      const lineHeight = 7;
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      // Title
-      pdf.setFontSize(18);
-      pdf.text(`${date} Attendance`, 105, y, { align: "center" });
-      y += 10;
-
-      if (session?.title) {
-        pdf.setFontSize(12);
-        pdf.text(session.title, 105, y, { align: "center" });
-        y += 10;
-      }
-
-      // Stats
-      pdf.setFontSize(11);
-      y += 5;
-      pdf.text(`Total: ${totalMembers} | Offline: ${totalOffline} | Online: ${totalOnline} | Absent: ${totalAbsent}`, 20, y);
-      y += lineHeight;
-      pdf.text(`Attendance Rate: ${totalMembers > 0 ? Math.round((totalAttended / totalMembers) * 100) : 0}%`, 20, y);
-      y += 15;
-
-      // Cell data
-      pdf.setFontSize(10);
-      for (const { cell, entries, stats } of cellsWithAttendance) {
-        // Check page break
-        if (y > pageHeight - 30) {
-          pdf.addPage();
-          y = 20;
-        }
-
-        pdf.setFontSize(12);
-        pdf.text(`${cell.number}Cell - ${cell.name} (Off:${stats.offline} On:${stats.online} Abs:${stats.absent})`, 20, y);
-        y += lineHeight;
-
-        pdf.setFontSize(9);
-        for (const entry of entries) {
-          if (y > pageHeight - 20) {
-            pdf.addPage();
-            y = 20;
-          }
-          const status = entry.status === "offline" ? "OFF" : entry.status === "online" ? "ON" : "ABS";
-          pdf.text(`  - ${entry.displayName}: ${status}${entry.note ? ` (${entry.note})` : ""}`, 25, y);
-          y += 5;
-        }
-        y += 5;
-      }
-
-      // Unassigned
-      if (unassignedEntries.length > 0) {
-        if (y > pageHeight - 30) {
-          pdf.addPage();
-          y = 20;
-        }
-        pdf.setFontSize(12);
-        pdf.text(`Visitors/Unassigned (${unassignedEntries.length})`, 20, y);
-        y += lineHeight;
-
-        pdf.setFontSize(9);
-        for (const entry of unassignedEntries) {
-          if (y > pageHeight - 20) {
-            pdf.addPage();
-            y = 20;
-          }
-          const status = entry.status === "offline" ? "OFF" : entry.status === "online" ? "ON" : "ABS";
-          pdf.text(`  - ${entry.displayName}${entry.isVisitor ? "(V)" : ""}: ${status}`, 25, y);
-          y += 5;
-        }
-      }
-
-      pdf.save(`attendance_${date}.pdf`);
-    } catch (err) {
-      console.error("PDF error:", err);
-      setError("PDF 생성에 실패했습니다.");
-    } finally {
-      setDownloading(false);
-    }
+  const handlePrint = () => {
+    window.print();
   };
 
   // Overall stats
@@ -281,22 +192,30 @@ export default function SessionDetailPage() {
             <p className="text-sm text-slate-600 mt-1">{session.title}</p>
           )}
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleDownloadPDF}
-            disabled={downloading}
-            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {downloading ? "PDF 생성중..." : "PDF 다운로드"}
-          </button>
-          <Link
-            href="/admin"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-          >
-            홈으로
-          </Link>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex gap-2">
+            <button
+              onClick={handlePrint}
+              className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
+            >
+              인쇄 / PDF 저장
+            </button>
+            <Link
+              href="/admin"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+            >
+              홈으로
+            </Link>
+          </div>
+          <p className="text-xs text-slate-400">PDF 저장: 프린터에서 &quot;PDF로 저장&quot; 선택</p>
         </div>
       </header>
+
+      {/* Print Header - only visible when printing */}
+      <div className="hidden print:block print:mb-4">
+        <h1 className="text-2xl font-bold text-center">{date} 출석부</h1>
+        {session?.title && <p className="text-center text-slate-600">{session.title}</p>}
+      </div>
 
       {/* Messages */}
       {(error || message) && (
