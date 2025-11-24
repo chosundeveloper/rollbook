@@ -145,6 +145,54 @@ export default function SessionDetailPage() {
     window.print();
   };
 
+  const handleShare = async () => {
+    // 텍스트 요약 생성
+    const statusText = (status: string) =>
+      status === "offline" ? "오프라인" : status === "online" ? "온라인" : "결석";
+
+    let text = `📋 ${date} 출석부\n`;
+    if (session?.title) text += `${session.title}\n`;
+    text += `\n📊 통계: 총 ${totalMembers}명 (오프라인 ${totalOffline}, 온라인 ${totalOnline}, 결석 ${totalAbsent})\n`;
+    text += `출석률: ${totalMembers > 0 ? Math.round((totalAttended / totalMembers) * 100) : 0}%\n\n`;
+
+    for (const { cell, entries } of cellsWithAttendance) {
+      text += `【${cell.number}셀 - ${cell.name}】\n`;
+      for (const entry of entries) {
+        text += `• ${entry.displayName}: ${statusText(entry.status)}${entry.note ? ` (${entry.note})` : ""}\n`;
+      }
+      text += "\n";
+    }
+
+    if (unassignedEntries.length > 0) {
+      text += `【미배정/방문자】\n`;
+      for (const entry of unassignedEntries) {
+        text += `• ${entry.displayName}${entry.isVisitor ? "(방문)" : ""}: ${statusText(entry.status)}\n`;
+      }
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${date} 출석부`,
+          text: text,
+        });
+      } catch (err) {
+        // 사용자가 취소한 경우 무시
+        if ((err as Error).name !== "AbortError") {
+          console.error("공유 실패:", err);
+        }
+      }
+    } else {
+      // Web Share API 미지원 시 클립보드 복사
+      try {
+        await navigator.clipboard.writeText(text);
+        setMessage("클립보드에 복사되었습니다!");
+      } catch {
+        setError("공유 기능을 사용할 수 없습니다.");
+      }
+    }
+  };
+
   // Overall stats
   const allEntries = [
     ...cellsWithAttendance.flatMap((c) => c.entries),
@@ -192,22 +240,25 @@ export default function SessionDetailPage() {
             <p className="text-sm text-slate-600 mt-1">{session.title}</p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex gap-2">
-            <button
-              onClick={handlePrint}
-              className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
-            >
-              인쇄 / PDF 저장
-            </button>
-            <Link
-              href="/admin"
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-            >
-              홈으로
-            </Link>
-          </div>
-          <p className="text-xs text-slate-400">PDF 저장: 프린터에서 &quot;PDF로 저장&quot; 선택</p>
+        <div className="flex gap-2">
+          <button
+            onClick={handleShare}
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+          >
+            공유하기
+          </button>
+          <button
+            onClick={handlePrint}
+            className="hidden sm:block rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
+          >
+            인쇄
+          </button>
+          <Link
+            href="/admin"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+          >
+            홈으로
+          </Link>
         </div>
       </header>
 
