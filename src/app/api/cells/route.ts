@@ -28,14 +28,14 @@ export async function POST(request: NextRequest) {
   if (unauthorized) return unauthorized;
 
   const body = await request.json().catch(() => ({}));
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const description = typeof body.description === "string" ? body.description.trim() : undefined;
+  const leaderId = typeof body.leaderId === "string" ? body.leaderId : "";
+  const leaderName = typeof body.leaderName === "string" ? body.leaderName.trim() : "";
 
-  if (!name) {
-    return NextResponse.json({ message: "셀 이름을 입력해 주세요." }, { status: 400 });
+  if (!leaderId || !leaderName) {
+    return NextResponse.json({ message: "셀장을 선택해 주세요." }, { status: 400 });
   }
 
-  const cell = await createCell(name, description);
+  const cell = await createCell(leaderId, leaderName);
   return NextResponse.json({ cell });
 }
 
@@ -45,14 +45,14 @@ export async function PUT(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const id = typeof body.id === "string" ? body.id : "";
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const description = typeof body.description === "string" ? body.description.trim() : undefined;
+  const leaderId = typeof body.leaderId === "string" ? body.leaderId : "";
+  const leaderName = typeof body.leaderName === "string" ? body.leaderName.trim() : "";
 
-  if (!id || !name) {
-    return NextResponse.json({ message: "셀 ID와 이름이 필요합니다." }, { status: 400 });
+  if (!id || !leaderId || !leaderName) {
+    return NextResponse.json({ message: "셀 ID와 셀장 정보가 필요합니다." }, { status: 400 });
   }
 
-  const cell = await updateCell(id, name, description);
+  const cell = await updateCell(id, leaderId, leaderName);
   if (!cell) {
     return NextResponse.json({ message: "셀을 찾을 수 없습니다." }, { status: 404 });
   }

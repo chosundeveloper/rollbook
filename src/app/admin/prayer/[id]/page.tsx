@@ -106,7 +106,7 @@ export default function AdminPrayerDetailPage() {
   if (loading) {
     return (
       <section className="mx-auto max-w-6xl space-y-6 px-3 pb-6 pt-4 sm:px-6">
-        <p className="text-sm text-slate-500">데이터를 불러오는 중...</p>
+        <p className="text-sm text-slate-600">데이터를 불러오는 중...</p>
       </section>
     );
   }
@@ -157,10 +157,10 @@ export default function AdminPrayerDetailPage() {
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">{schedule.name}</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-600">
             {schedule.startDate} ~ {schedule.endDate} ({dates.length}일)
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-600">
             기도 시간: {schedule.times.map((t) => t.label).join(", ")}
           </p>
         </div>
@@ -195,7 +195,7 @@ export default function AdminPrayerDetailPage() {
                   {summary.rate}%
                 </span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-600">
                 {summary.memberCount}명 · {summary.checkedCount}/{summary.totalSlots} 체크
               </p>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
@@ -251,7 +251,7 @@ export default function AdminPrayerDetailPage() {
                       schedule.times.map((time) => (
                         <th
                           key={`${date}-${time.id}`}
-                          className="px-1 py-1 text-center text-[10px] font-normal text-slate-400"
+                          className="px-1 py-1 text-center text-[10px] font-normal text-slate-600"
                         >
                           {time.label.replace("시", "")}
                         </th>

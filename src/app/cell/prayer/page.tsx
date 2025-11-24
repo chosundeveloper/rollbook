@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import type { PrayerSchedule, PrayerCheckEntry } from "@/types/prayer";
+import type { AttendanceSession } from "@/types/attendance";
 import { AUTH_DISABLED } from "@/lib/auth";
 
 interface CellRosterEntry {
@@ -43,10 +45,13 @@ function getDatesInRange(start: string, end: string): string[] {
 }
 
 export default function CellPrayerPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const authEnabled = !AUTH_DISABLED;
 
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [schedules, setSchedules] = useState<PrayerSchedule[]>([]);
+  const [sessions, setSessions] = useState<AttendanceSession[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
   const [cell, setCell] = useState<CellResponse | null>(null);
   const [checkState, setCheckState] = useState<Record<string, boolean>>({});
@@ -88,6 +93,13 @@ export default function CellPrayerPage() {
         if (!schedulesRes.ok) throw new Error("기도회 목록을 불러오지 못했습니다.");
         const schedulesData = await schedulesRes.json();
 
+        // Get sessions
+        const sessionsRes = await fetch("/api/sessions");
+        if (sessionsRes.ok) {
+          const sessionsData = await sessionsRes.json();
+          if (!cancelled) setSessions(sessionsData.sessions as AttendanceSession[]);
+        }
+
         // Get cell info
         const cellsRes = await fetch("/api/cells");
         if (!cellsRes.ok) throw new Error("셀 정보를 불러오지 못했습니다.");
@@ -100,8 +112,14 @@ export default function CellPrayerPage() {
           setAccount({ cellId: sessionData.cellId });
           setSchedules(schedulesData.schedules as PrayerSchedule[]);
           setCell(myCell || null);
-          if (schedulesData.schedules.length > 0) {
-            setSelectedScheduleId(schedulesData.schedules[0].id);
+
+          // URL 파라미터에서 schedule ID 가져오기, 없으면 첫 번째 선택
+          const scheduleParam = searchParams.get("schedule");
+          const loadedSchedules = schedulesData.schedules as PrayerSchedule[];
+          if (scheduleParam && loadedSchedules.some((s) => s.id === scheduleParam)) {
+            setSelectedScheduleId(scheduleParam);
+          } else if (loadedSchedules.length > 0) {
+            setSelectedScheduleId(loadedSchedules[0].id);
           }
         }
       } catch (err) {
@@ -115,7 +133,7 @@ export default function CellPrayerPage() {
 
     loadInitialData();
     return () => { cancelled = true; };
-  }, [authEnabled, handleAuthFailure]);
+  }, [authEnabled, handleAuthFailure, searchParams]);
 
   // Load checks when schedule changes
   useEffect(() => {
@@ -228,7 +246,7 @@ export default function CellPrayerPage() {
   if (loading) {
     return (
       <section className="mx-auto max-w-4xl space-y-6 px-3 pb-6 pt-4 sm:px-6">
-        <p className="text-sm text-slate-500">데이터를 불러오는 중...</p>
+        <p className="text-sm text-slate-600">데이터를 불러오는 중...</p>
       </section>
     );
   }
@@ -255,15 +273,45 @@ export default function CellPrayerPage() {
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">기도회 체크리스트</h1>
-          <p className="text-sm text-slate-500">{cell.name} - 셀원별 기도 참석 체크</p>
+          <p className="text-sm text-slate-600">{cell.name}</p>
         </div>
-        <div className="flex gap-2">
-          <a
-            href="/cell"
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
-          >
-            출석부로 이동
-          </a>
+        <div className="flex flex-wrap gap-2">
+          {(sessions.length > 0 || schedules.length > 0) && (
+            <select
+              value=""
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.startsWith("session:")) {
+                  router.push(`/cell?date=${value.replace("session:", "")}`);
+                } else if (value.startsWith("prayer:")) {
+                  setSelectedScheduleId(value.replace("prayer:", ""));
+                }
+              }}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+            >
+              <option value="" disabled>
+                바로가기
+              </option>
+              {sessions.length > 0 && (
+                <optgroup label="출석부">
+                  {sessions.map((session) => (
+                    <option key={session.id} value={`session:${session.date}`}>
+                      {session.date} {session.title || ""}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {schedules.length > 0 && (
+                <optgroup label="기도회">
+                  {schedules.map((schedule) => (
+                    <option key={schedule.id} value={`prayer:${schedule.id}`}>
+                      {schedule.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          )}
           {authEnabled && (
             <button
               type="button"
@@ -339,7 +387,7 @@ export default function CellPrayerPage() {
                     selectedSchedule.times.map((time) => (
                       <th
                         key={`${date}-${time.id}`}
-                        className="px-1 py-1 text-center text-xs font-normal text-slate-400"
+                        className="px-1 py-1 text-center text-xs font-normal text-slate-600"
                       >
                         {time.label}
                       </th>
@@ -394,7 +442,7 @@ export default function CellPrayerPage() {
       )}
 
       {selectedSchedule && members.length === 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
           셀원이 없습니다.
         </div>
       )}

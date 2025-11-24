@@ -153,7 +153,7 @@ export default function AdminPrayerPage() {
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">기도회 관리</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-600">
             기도회를 생성하면 각 셀장이 셀원별 기도 체크리스트를 작성할 수 있습니다.
           </p>
         </div>
@@ -179,7 +179,7 @@ export default function AdminPrayerPage() {
       {/* Create Form */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold text-slate-800">새 기도회 생성</h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-600">
           기도 시간은 오전 8시 / 오후 8시로 자동 설정됩니다.
         </p>
         <div className="mt-4 flex flex-col gap-3 md:flex-row">
@@ -241,9 +241,9 @@ export default function AdminPrayerPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold text-slate-800">기도회 목록</h2>
         {loading ? (
-          <p className="mt-4 text-sm text-slate-500">기도회 목록을 불러오는 중...</p>
+          <p className="mt-4 text-sm text-slate-600">기도회 목록을 불러오는 중...</p>
         ) : schedules.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">아직 생성된 기도회가 없습니다.</p>
+          <p className="mt-4 text-sm text-slate-600">아직 생성된 기도회가 없습니다.</p>
         ) : (
           <ul className="mt-4 space-y-3">
             {schedules.map((schedule) => (
@@ -253,10 +253,10 @@ export default function AdminPrayerPage() {
               >
                 <div>
                   <p className="font-medium text-slate-800">{schedule.name}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-600">
                     {formatDateRange(schedule.startDate, schedule.endDate)} ({getDayCount(schedule.startDate, schedule.endDate)}일)
                   </p>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-slate-600">
                     기도 시간: {schedule.times.map((t) => t.label).join(", ")}
                   </p>
                 </div>

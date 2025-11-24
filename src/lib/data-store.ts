@@ -74,6 +74,7 @@ export async function addMember(payload: NewMemberPayload): Promise<Member> {
   const newMember: Member = {
     id: `mem-${randomUUID()}`,
     name: payload.name.trim(),
+    birthYear: payload.birthYear || undefined,
     team: payload.team?.trim() || undefined,
     contact: payload.contact?.trim() || undefined,
     role: payload.role?.trim() || undefined,
@@ -117,7 +118,6 @@ async function ensureSessionExists(date: string) {
 
 export async function getAttendanceByDate(date: string): Promise<AttendanceEntry[]> {
   const normalized = normalizeDate(date);
-  await ensureSessionExists(normalized);
   const file = await readJsonFile<AttendanceFile>(attendanceFilePath, DEFAULT_ATTENDANCE);
   return file.entries.filter((entry) => entry.date === normalized);
 }

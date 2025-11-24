@@ -7,14 +7,30 @@ interface Account {
   id: string;
   username: string;
   displayName?: string;
+  passwordPlain?: string;
   roles?: string[];
   cellId?: string;
+}
+
+interface CellRosterEntry {
+  role: string;
+  member?: {
+    id: string;
+    name: string;
+  };
+}
+
+interface Cell {
+  id: string;
+  name: string;
+  roster?: CellRosterEntry[];
 }
 
 export default function AdminAccountsPage() {
   const authEnabled = !AUTH_DISABLED;
 
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [cells, setCells] = useState<Cell[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -22,15 +38,24 @@ export default function AdminAccountsPage() {
   // Form states
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [newDisplayName, setNewDisplayName] = useState("");
+  const [newDisplayName, setNewDisplayName] = useState(""); // 관리자용
   const [newRole, setNewRole] = useState<"admin" | "leader">("leader");
+  const [newCellId, setNewCellId] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // 선택된 셀의 셀장 이름 가져오기
+  const getLeaderName = (cellId: string) => {
+    const cell = cells.find((c) => c.id === cellId);
+    const leader = cell?.roster?.find((r) => r.role === "leader");
+    return leader?.member?.name || "";
+  };
 
   // Edit states
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDisplayName, setEditDisplayName] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editRole, setEditRole] = useState<"admin" | "leader">("leader");
+  const [editCellId, setEditCellId] = useState("");
 
   const handleAuthFailure = useCallback(() => {
     if (!authEnabled) return;
@@ -43,21 +68,30 @@ export default function AdminAccountsPage() {
     return () => clearTimeout(timeout);
   }, [message]);
 
-  const loadAccounts = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/accounts");
-      if (authEnabled && res.status === 401) {
+      const [accountsRes, cellsRes] = await Promise.all([
+        fetch("/api/accounts"),
+        fetch("/api/cells"),
+      ]);
+
+      if (authEnabled && accountsRes.status === 401) {
         handleAuthFailure();
         return;
       }
-      if (res.status === 403) {
+      if (accountsRes.status === 403) {
         setError("관리자 권한이 필요합니다.");
         return;
       }
-      if (!res.ok) throw new Error("계정 정보를 불러오지 못했습니다.");
-      const data = await res.json();
-      setAccounts(data.accounts as Account[]);
+      if (!accountsRes.ok) throw new Error("계정 정보를 불러오지 못했습니다.");
+      if (!cellsRes.ok) throw new Error("셀 정보를 불러오지 못했습니다.");
+
+      const accountsData = await accountsRes.json();
+      const cellsData = await cellsRes.json();
+
+      setAccounts(accountsData.accounts as Account[]);
+      setCells(cellsData.cells as Cell[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "데이터 로드 실패");
     } finally {
@@ -66,8 +100,8 @@ export default function AdminAccountsPage() {
   }, [authEnabled, handleAuthFailure]);
 
   useEffect(() => {
-    loadAccounts();
-  }, [loadAccounts]);
+    loadData();
+  }, [loadData]);
 
   const handleCreate = useCallback(async () => {
     if (!newUsername.trim()) {
@@ -78,19 +112,29 @@ export default function AdminAccountsPage() {
       setError("비밀번호를 입력해 주세요.");
       return;
     }
+    if (newRole === "leader" && !newCellId) {
+      setError("담당 셀을 선택해 주세요.");
+      return;
+    }
 
     setCreating(true);
     setError(null);
 
     try {
+      // 셀장이면 셀장 이름 자동 사용, 관리자면 입력한 이름 사용
+      const displayName = newRole === "leader"
+        ? getLeaderName(newCellId)
+        : newDisplayName.trim();
+
       const res = await fetch("/api/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: newUsername.trim(),
           password: newPassword.trim(),
-          displayName: newDisplayName.trim() || undefined,
+          displayName: displayName || undefined,
           roles: [newRole],
+          cellId: newRole === "leader" ? newCellId : undefined,
         }),
       });
 
@@ -109,13 +153,14 @@ export default function AdminAccountsPage() {
       setNewPassword("");
       setNewDisplayName("");
       setNewRole("leader");
-      await loadAccounts();
+      setNewCellId("");
+      await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "계정 생성 오류");
     } finally {
       setCreating(false);
     }
-  }, [authEnabled, handleAuthFailure, loadAccounts, newDisplayName, newPassword, newRole, newUsername]);
+  }, [authEnabled, handleAuthFailure, loadData, newDisplayName, newPassword, newRole, newUsername, newCellId]);
 
   const handleUpdate = useCallback(async (id: string) => {
     try {
@@ -127,6 +172,7 @@ export default function AdminAccountsPage() {
           displayName: editDisplayName.trim() || undefined,
           password: editPassword.trim() || undefined,
           roles: [editRole],
+          cellId: editRole === "leader" ? editCellId : undefined,
         }),
       });
 
@@ -138,11 +184,12 @@ export default function AdminAccountsPage() {
       setMessage("계정이 수정되었습니다.");
       setEditingId(null);
       setEditPassword("");
-      await loadAccounts();
+      setEditCellId("");
+      await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "계정 수정 오류");
     }
-  }, [editDisplayName, editPassword, editRole, loadAccounts]);
+  }, [editDisplayName, editPassword, editRole, editCellId, loadData]);
 
   const handleDelete = useCallback(async (id: string, username: string) => {
     if (!confirm(`"${username}" 계정을 삭제하시겠습니까?`)) return;
@@ -155,11 +202,11 @@ export default function AdminAccountsPage() {
       }
 
       setMessage("계정이 삭제되었습니다.");
-      await loadAccounts();
+      await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "계정 삭제 오류");
     }
-  }, [loadAccounts]);
+  }, [loadData]);
 
   const handleLogout = useCallback(async () => {
     if (!authEnabled) return;
@@ -170,7 +217,7 @@ export default function AdminAccountsPage() {
   if (loading) {
     return (
       <section className="mx-auto max-w-4xl space-y-6 px-3 pb-6 pt-4 sm:px-6">
-        <p className="text-sm text-slate-500">데이터를 불러오는 중...</p>
+        <p className="text-sm text-slate-600">데이터를 불러오는 중...</p>
       </section>
     );
   }
@@ -180,14 +227,26 @@ export default function AdminAccountsPage() {
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">계정 관리</h1>
-          <p className="text-sm text-slate-500">로그인 계정을 관리하세요.</p>
+          <p className="text-sm text-slate-600">로그인 계정을 관리하세요.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <a
             href="/admin"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
           >
             출석부
+          </a>
+          <a
+            href="/admin/members"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+          >
+            교인 관리
+          </a>
+          <a
+            href="/admin/cells"
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+          >
+            셀 관리
           </a>
           {authEnabled && (
             <button
@@ -218,7 +277,7 @@ export default function AdminAccountsPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold text-slate-800">새 계정 생성</h2>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
-          <label className="text-sm text-slate-600">
+          <label className="text-sm text-slate-700">
             <span className="mb-1 block font-medium">아이디 *</span>
             <input
               type="text"
@@ -229,7 +288,7 @@ export default function AdminAccountsPage() {
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
           </label>
-          <label className="text-sm text-slate-600">
+          <label className="text-sm text-slate-700">
             <span className="mb-1 block font-medium">비밀번호 *</span>
             <input
               type="password"
@@ -240,17 +299,19 @@ export default function AdminAccountsPage() {
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             />
           </label>
-          <label className="text-sm text-slate-600">
-            <span className="mb-1 block font-medium">이름</span>
-            <input
-              type="text"
-              value={newDisplayName}
-              onChange={(e) => setNewDisplayName(e.target.value)}
-              placeholder="홍길동"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
-            />
-          </label>
-          <label className="text-sm text-slate-600">
+          {newRole === "admin" && (
+            <label className="text-sm text-slate-700">
+              <span className="mb-1 block font-medium">이름</span>
+              <input
+                type="text"
+                value={newDisplayName}
+                onChange={(e) => setNewDisplayName(e.target.value)}
+                placeholder="홍길동"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              />
+            </label>
+          )}
+          <label className="text-sm text-slate-700">
             <span className="mb-1 block font-medium">권한</span>
             <select
               value={newRole}
@@ -261,6 +322,26 @@ export default function AdminAccountsPage() {
               <option value="leader">셀장</option>
             </select>
           </label>
+          {newRole === "leader" && (
+            <label className="text-sm text-slate-700">
+              <span className="mb-1 block font-medium">담당 셀 *</span>
+              <select
+                value={newCellId}
+                onChange={(e) => setNewCellId(e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              >
+                <option value="">셀 선택...</option>
+                {cells.map((cell) => {
+                  const leaderName = getLeaderName(cell.id);
+                  return (
+                    <option key={cell.id} value={cell.id}>
+                      {cell.name} {leaderName ? `(${leaderName})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+          )}
           <div className="flex items-end">
             <button
               type="button"
@@ -278,10 +359,10 @@ export default function AdminAccountsPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-slate-800">계정 목록</h2>
-          <span className="text-sm text-slate-500">{accounts.length}개</span>
+          <span className="text-sm text-slate-600">{accounts.length}개</span>
         </div>
         {accounts.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">등록된 계정이 없습니다.</p>
+          <p className="mt-4 text-sm text-slate-600">등록된 계정이 없습니다.</p>
         ) : (
           <ul className="mt-4 space-y-2">
             {accounts.map((account) => (
@@ -291,7 +372,7 @@ export default function AdminAccountsPage() {
               >
                 {editingId === account.id ? (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
                       <input
                         type="text"
                         value={editDisplayName}
@@ -315,6 +396,20 @@ export default function AdminAccountsPage() {
                         <option value="admin">관리자</option>
                         <option value="leader">셀장</option>
                       </select>
+                      {editRole === "leader" && (
+                        <select
+                          value={editCellId}
+                          onChange={(e) => setEditCellId(e.target.value)}
+                          className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+                        >
+                          <option value="">셀 선택...</option>
+                          {cells.map((cell) => (
+                            <option key={cell.id} value={cell.id}>
+                              {cell.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -338,20 +433,27 @@ export default function AdminAccountsPage() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-slate-700">{account.username}</span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="font-medium text-slate-800">
+                        {account.username} / {account.passwordPlain || "****"}
+                      </span>
                       {account.displayName && (
-                        <span className="text-sm text-slate-500">({account.displayName})</span>
+                        <span className="text-sm text-slate-700">({account.displayName})</span>
                       )}
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
                           account.roles?.includes("admin")
                             ? "bg-purple-100 text-purple-700"
-                            : "bg-slate-100 text-slate-600"
+                            : "bg-sky-100 text-sky-700"
                         }`}
                       >
                         {account.roles?.includes("admin") ? "관리자" : "셀장"}
                       </span>
+                      {account.cellId && (
+                        <span className="text-sm text-slate-700">
+                          {cells.find((c) => c.id === account.cellId)?.name || ""}
+                        </span>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -360,6 +462,7 @@ export default function AdminAccountsPage() {
                           setEditingId(account.id);
                           setEditDisplayName(account.displayName || "");
                           setEditRole(account.roles?.includes("admin") ? "admin" : "leader");
+                          setEditCellId(account.cellId || "");
                           setEditPassword("");
                         }}
                         className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 transition hover:border-slate-500"

@@ -63,28 +63,42 @@ async function writeCellsFile(file: CellsFile): Promise<void> {
   await fs.writeFile(cellsFilePath, JSON.stringify(file, null, 2), "utf-8");
 }
 
-export async function createCell(name: string, description?: string): Promise<CellRecord> {
+export async function createCell(leaderId: string, leaderName: string): Promise<CellRecord> {
   const file = await readCellsFile();
+
+  // 다음 셀 번호 계산
+  const maxNumber = file.cells.reduce((max, c) => Math.max(max, c.number || 0), 0);
+  const nextNumber = maxNumber + 1;
+
   const cell: CellRecord = {
     id: createId(),
-    name,
-    description,
-    members: [],
+    number: nextNumber,
+    name: `${leaderName}셀`,
+    leaderId,
+    members: [{ memberId: leaderId, role: "leader" }],
   };
   file.cells.push(cell);
   await writeCellsFile(file);
   return cell;
 }
 
-export async function updateCell(id: string, name: string, description?: string): Promise<CellRecord | null> {
+export async function updateCell(id: string, leaderId: string, leaderName: string): Promise<CellRecord | null> {
   const file = await readCellsFile();
   const index = file.cells.findIndex((c) => c.id === id);
   if (index === -1) return null;
 
+  const cell = file.cells[index];
+
+  // 기존 셀장 제거하고 새 셀장 추가
+  const membersWithoutOldLeader = (cell.members || []).filter(
+    (m) => m.memberId !== cell.leaderId && m.role !== "leader"
+  );
+
   file.cells[index] = {
-    ...file.cells[index],
-    name,
-    description,
+    ...cell,
+    name: `${leaderName}셀`,
+    leaderId,
+    members: [{ memberId: leaderId, role: "leader" }, ...membersWithoutOldLeader],
   };
   await writeCellsFile(file);
   return file.cells[index];

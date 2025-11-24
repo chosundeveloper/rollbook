@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import type { Member, CellRole } from "@/types/attendance";
 import { AUTH_DISABLED } from "@/lib/auth";
 
@@ -11,8 +12,9 @@ interface CellRosterEntry {
 
 interface CellResponse {
   id: string;
+  number: number;
   name: string;
-  description?: string;
+  leaderId: string;
   roster: CellRosterEntry[];
 }
 
@@ -21,8 +23,6 @@ const CELL_ROLE_LABEL: Record<CellRole, string> = {
   subleader: "부셀장",
   member: "셀원",
 };
-
-const CELL_ROLES: CellRole[] = ["leader", "subleader", "member"];
 
 export default function AdminCellsPage() {
   const authEnabled = !AUTH_DISABLED;
@@ -34,19 +34,12 @@ export default function AdminCellsPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   // Form states
-  const [newCellName, setNewCellName] = useState("");
   const [newCellLeader, setNewCellLeader] = useState("");
   const [creating, setCreating] = useState(false);
-
-  // Edit states
-  const [editingCell, setEditingCell] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editDescription, setEditDescription] = useState("");
 
   // Member assignment states
   const [assigningCell, setAssigningCell] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState("");
-  const [selectedRole, setSelectedRole] = useState<CellRole>("member");
 
   const handleAuthFailure = useCallback(() => {
     if (!authEnabled) return;
@@ -91,13 +84,21 @@ export default function AdminCellsPage() {
     loadData();
   }, [loadData]);
 
+  // 셀장으로 사용 가능한 멤버 (role이 leader이고 아직 다른 셀의 셀장이 아닌)
+  const usedLeaderIds = new Set(cells.map((c) => c.leaderId));
+  const availableLeaders = members.filter(
+    (m) => m.role === "leader" && !usedLeaderIds.has(m.id)
+  );
+
   const handleCreateCell = useCallback(async () => {
-    if (!newCellName.trim()) {
-      setError("셀 이름을 입력해 주세요.");
-      return;
-    }
     if (!newCellLeader) {
       setError("셀장을 선택해 주세요.");
+      return;
+    }
+
+    const leader = members.find((m) => m.id === newCellLeader);
+    if (!leader) {
+      setError("선택한 셀장을 찾을 수 없습니다.");
       return;
     }
 
@@ -105,12 +106,12 @@ export default function AdminCellsPage() {
     setError(null);
 
     try {
-      // 1. 셀 생성
       const res = await fetch("/api/cells", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: newCellName.trim(),
+          leaderId: newCellLeader,
+          leaderName: leader.name,
         }),
       });
 
@@ -124,26 +125,7 @@ export default function AdminCellsPage() {
         throw new Error(data.message || "셀 생성 실패");
       }
 
-      const cellData = await res.json();
-      const newCellId = cellData.cell.id;
-
-      // 2. 셀장 배정
-      const leaderRes = await fetch("/api/cells/members", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cellId: newCellId,
-          memberId: newCellLeader,
-          role: "leader",
-        }),
-      });
-
-      if (!leaderRes.ok) {
-        throw new Error("셀장 배정에 실패했습니다.");
-      }
-
       setMessage("셀이 생성되었습니다.");
-      setNewCellName("");
       setNewCellLeader("");
       await loadData();
     } catch (err) {
@@ -151,40 +133,10 @@ export default function AdminCellsPage() {
     } finally {
       setCreating(false);
     }
-  }, [authEnabled, handleAuthFailure, loadData, newCellLeader, newCellName]);
-
-  const handleUpdateCell = useCallback(async (cellId: string) => {
-    if (!editName.trim()) {
-      setError("셀 이름을 입력해 주세요.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/cells", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: cellId,
-          name: editName.trim(),
-          description: editDescription.trim() || undefined,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "셀 수정 실패");
-      }
-
-      setMessage("셀이 수정되었습니다.");
-      setEditingCell(null);
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "셀 수정 오류");
-    }
-  }, [editDescription, editName, loadData]);
+  }, [authEnabled, handleAuthFailure, loadData, members, newCellLeader]);
 
   const handleDeleteCell = useCallback(async (cellId: string, cellName: string) => {
-    if (!confirm(`"${cellName}" 셀을 삭제하시겠습니까?`)) return;
+    if (!confirm(`"${cellName}"을 삭제하시겠습니까?`)) return;
 
     try {
       const res = await fetch(`/api/cells?id=${cellId}`, { method: "DELETE" });
@@ -213,7 +165,7 @@ export default function AdminCellsPage() {
         body: JSON.stringify({
           cellId,
           memberId: selectedMember,
-          role: selectedRole,
+          role: "member",
         }),
       });
 
@@ -222,17 +174,20 @@ export default function AdminCellsPage() {
         throw new Error(data.message || "멤버 배정 실패");
       }
 
-      setMessage("멤버가 배정되었습니다.");
+      setMessage("셀원이 추가되었습니다.");
       setSelectedMember("");
-      setSelectedRole("member");
       setAssigningCell(null);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "멤버 배정 오류");
     }
-  }, [loadData, selectedMember, selectedRole]);
+  }, [loadData, selectedMember]);
 
-  const handleRemoveMember = useCallback(async (cellId: string, memberId: string, memberName: string) => {
+  const handleRemoveMember = useCallback(async (cellId: string, memberId: string, memberName: string, isLeader: boolean) => {
+    if (isLeader) {
+      setError("셀장은 제외할 수 없습니다. 셀을 삭제하세요.");
+      return;
+    }
     if (!confirm(`"${memberName}"을(를) 셀에서 제외하시겠습니까?`)) return;
 
     try {
@@ -245,7 +200,7 @@ export default function AdminCellsPage() {
         throw new Error(data.message || "멤버 제외 실패");
       }
 
-      setMessage("멤버가 제외되었습니다.");
+      setMessage("셀원이 제외되었습니다.");
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "멤버 제외 오류");
@@ -258,7 +213,7 @@ export default function AdminCellsPage() {
     handleAuthFailure();
   }, [authEnabled, handleAuthFailure]);
 
-  // Get unassigned members
+  // 미배정 멤버
   const assignedMemberIds = new Set(
     cells.flatMap((c) => c.roster.map((r) => r.member?.id).filter(Boolean))
   );
@@ -267,7 +222,7 @@ export default function AdminCellsPage() {
   if (loading) {
     return (
       <section className="mx-auto max-w-4xl space-y-6 px-3 pb-6 pt-4 sm:px-6">
-        <p className="text-sm text-slate-500">데이터를 불러오는 중...</p>
+        <p className="text-sm text-slate-600">데이터를 불러오는 중...</p>
       </section>
     );
   }
@@ -277,15 +232,15 @@ export default function AdminCellsPage() {
       <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">셀 관리</h1>
-          <p className="text-sm text-slate-500">셀을 생성하고 멤버를 배정하세요.</p>
+          <p className="text-sm text-slate-600">셀장을 선택하면 셀이 자동 생성됩니다.</p>
         </div>
         <div className="flex gap-2">
-          <a
+          <Link
             href="/admin"
             className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
           >
-            출석부로 이동
-          </a>
+            대시보드
+          </Link>
           {authEnabled && (
             <button
               type="button"
@@ -314,140 +269,98 @@ export default function AdminCellsPage() {
       {/* Create Cell Form */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold text-slate-800">새 셀 생성</h2>
-        <div className="mt-4 flex flex-col gap-3 md:flex-row">
-          <label className="flex-1 text-sm text-slate-600">
-            <span className="mb-1 block font-medium">셀 이름</span>
-            <input
-              type="text"
-              value={newCellName}
-              onChange={(e) => setNewCellName(e.target.value)}
-              placeholder="예: 1셀"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
-            />
-          </label>
-          <label className="flex-1 text-sm text-slate-600">
-            <span className="mb-1 block font-medium">셀장 *</span>
+        <p className="text-sm text-slate-600">셀장을 선택하면 &quot;OOO셀&quot;로 자동 생성됩니다.</p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <label className="flex-1 text-sm text-slate-700">
+            <span className="mb-1 block font-medium">셀장 선택 *</span>
             <select
               value={newCellLeader}
               onChange={(e) => setNewCellLeader(e.target.value)}
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
             >
               <option value="">셀장 선택...</option>
-              {members.map((m) => (
+              {availableLeaders.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.name}
+                  {m.name} {m.birthYear ? `(${m.birthYear}년생)` : ""}
                 </option>
               ))}
             </select>
           </label>
-          <div className="md:flex md:flex-col md:justify-end">
+          <div className="sm:flex sm:flex-col sm:justify-end">
             <button
               type="button"
               onClick={handleCreateCell}
-              disabled={creating}
+              disabled={creating || !newCellLeader}
               className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {creating ? "생성 중..." : "셀 생성"}
             </button>
           </div>
         </div>
+        {availableLeaders.length === 0 && (
+          <p className="mt-2 text-sm text-amber-600">
+            셀장으로 배정 가능한 멤버가 없습니다. 교인 관리에서 역할이 &quot;셀장&quot;인 멤버를 등록하세요.
+          </p>
+        )}
       </div>
 
       {/* Unassigned Members Info */}
       {unassignedMembers.length > 0 && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          배정되지 않은 멤버: {unassignedMembers.map((m) => m.name).join(", ")} ({unassignedMembers.length}명)
+          미배정 멤버: {unassignedMembers.map((m) => m.name).join(", ")} ({unassignedMembers.length}명)
         </div>
       )}
 
       {/* Cell List */}
-      {cells.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500 shadow-sm">
-          아직 생성된 셀이 없습니다.
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-800">셀 목록</h2>
+          <span className="text-sm text-slate-600">{cells.length}개</span>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {cells.map((cell) => (
-            <div key={cell.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              {editingCell === cell.id ? (
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder="설명"
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleUpdateCell(cell.id)}
-                      className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-500"
-                    >
-                      저장
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingCell(null)}
-                      className="rounded-md border border-slate-300 px-3 py-1.5 text-xs text-slate-600 transition hover:border-slate-500"
-                    >
-                      취소
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
+
+        {cells.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-600">생성된 셀이 없습니다.</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {cells.map((cell) => {
+              const leader = cell.roster.find((r) => r.role === "leader");
+              const cellMembers = cell.roster.filter((r) => r.role !== "leader");
+
+              return (
+                <div key={cell.id} className="rounded-lg border border-slate-100 p-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-800">{cell.name}</h3>
-                      {cell.description && (
-                        <p className="text-sm text-slate-500">{cell.description}</p>
-                      )}
-                      <p className="mt-1 text-xs text-slate-400">{cell.roster.length}명</p>
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        {cell.number}셀 - {cell.name}
+                      </h3>
+                      <p className="text-sm text-slate-600">
+                        셀장: {leader?.member?.name || "없음"} / 셀원: {cellMembers.length}명
+                      </p>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingCell(cell.id);
-                          setEditName(cell.name);
-                          setEditDescription(cell.description || "");
-                        }}
-                        className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 transition hover:border-slate-500"
-                      >
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCell(cell.id, cell.name)}
-                        className="rounded-md border border-rose-300 px-2 py-1 text-xs text-rose-600 transition hover:border-rose-500"
-                      >
-                        삭제
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCell(cell.id, cell.name)}
+                      className="rounded-md border border-rose-300 px-2 py-1 text-xs text-rose-600 transition hover:border-rose-500"
+                    >
+                      삭제
+                    </button>
                   </div>
 
                   {/* Members */}
-                  <div className="mt-4">
+                  <div className="mt-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-slate-600">셀원 목록</h4>
+                      <span className="text-sm font-medium text-slate-700">셀원 목록</span>
                       <button
                         type="button"
                         onClick={() => setAssigningCell(assigningCell === cell.id ? null : cell.id)}
                         className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 transition hover:border-slate-500"
                       >
-                        {assigningCell === cell.id ? "취소" : "멤버 추가"}
+                        {assigningCell === cell.id ? "취소" : "셀원 추가"}
                       </button>
                     </div>
 
                     {assigningCell === cell.id && (
-                      <div className="mt-3 flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3 sm:flex-row">
+                      <div className="mt-2 flex gap-2 rounded-lg border border-slate-100 bg-slate-50 p-2">
                         <select
                           value={selectedMember}
                           onChange={(e) => setSelectedMember(e.target.value)}
@@ -455,72 +368,70 @@ export default function AdminCellsPage() {
                         >
                           <option value="">멤버 선택...</option>
                           {members
-                            .filter((m) => !cell.roster.some((r) => r.member?.id === m.id))
+                            .filter((m) => m.role !== "leader" && !cell.roster.some((r) => r.member?.id === m.id))
                             .map((m) => (
                               <option key={m.id} value={m.id}>
                                 {m.name} {assignedMemberIds.has(m.id) ? "(다른 셀)" : ""}
                               </option>
                             ))}
                         </select>
-                        <select
-                          value={selectedRole}
-                          onChange={(e) => setSelectedRole(e.target.value as CellRole)}
-                          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-                        >
-                          {CELL_ROLES.map((role) => (
-                            <option key={role} value={role}>
-                              {CELL_ROLE_LABEL[role]}
-                            </option>
-                          ))}
-                        </select>
                         <button
                           type="button"
                           onClick={() => handleAddMember(cell.id)}
                           className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-500"
                         >
-                          배정
+                          추가
                         </button>
                       </div>
                     )}
 
-                    {cell.roster.length === 0 ? (
-                      <p className="mt-2 text-sm text-slate-400">배정된 멤버가 없습니다.</p>
-                    ) : (
-                      <ul className="mt-3 space-y-2">
-                        {cell.roster.map((entry) => (
-                          <li
-                            key={entry.member?.id}
-                            className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
-                          >
-                            <div>
-                              <span className="font-medium text-slate-700">
-                                {entry.member?.name || "미등록"}
+                    <ul className="mt-2 space-y-1">
+                      {cell.roster.map((entry) => (
+                        <li
+                          key={entry.member?.id}
+                          className="flex items-center justify-between rounded-lg border border-slate-50 px-3 py-2"
+                        >
+                          <div>
+                            <span className="font-medium text-slate-700">
+                              {entry.member?.name || "미등록"}
+                            </span>
+                            <span
+                              className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                                entry.role === "leader"
+                                  ? "bg-sky-100 text-sky-700"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {CELL_ROLE_LABEL[entry.role]}
+                            </span>
+                            {entry.member?.birthYear && (
+                              <span className="ml-2 text-xs text-slate-600">
+                                {entry.member.birthYear}년생
                               </span>
-                              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                                {CELL_ROLE_LABEL[entry.role]}
-                              </span>
-                            </div>
+                            )}
+                          </div>
+                          {entry.role !== "leader" && (
                             <button
                               type="button"
                               onClick={() =>
                                 entry.member &&
-                                handleRemoveMember(cell.id, entry.member.id, entry.member.name)
+                                handleRemoveMember(cell.id, entry.member.id, entry.member.name, entry.role === "leader")
                               }
                               className="text-xs text-rose-500 hover:text-rose-600"
                             >
                               제외
                             </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

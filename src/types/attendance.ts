@@ -3,6 +3,7 @@ export type AttendanceStatus = "online" | "offline" | "absent";
 export interface Member {
   id: string;
   name: string;
+  birthYear?: number; // 출생년도 (예: 1995)
   team?: string;
   contact?: string;
   role?: string;
@@ -44,6 +45,7 @@ export interface SaveAttendancePayload {
 
 export interface NewMemberPayload {
   name: string;
+  birthYear?: number;
   team?: string;
   contact?: string;
   role?: string;
@@ -72,8 +74,8 @@ export interface CellMemberAssignment {
 
 export interface CellRecord {
   id: string;
-  name: string;
-  description?: string;
+  number: number; // 셀 번호 (1, 2, 3...)
+  name: string; // 셀장 이름 기반 (예: "김철수셀")
+  leaderId: string; // 셀장 필수
   members?: CellMemberAssignment[];
-  leaderId?: string;
 }

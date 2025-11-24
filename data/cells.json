@@ -1,19 +1,40 @@
 {
   "cells": [
     {
-      "id": "cell-lee",
-      "name": "이 셀",
-      "leaderId": "lee"
+      "id": "cell-001",
+      "number": 1,
+      "name": "김철수셀",
+      "leaderId": "mem-001",
+      "members": [
+        {"memberId": "mem-001", "role": "leader"},
+        {"memberId": "mem-002", "role": "member"},
+        {"memberId": "mem-003", "role": "member"},
+        {"memberId": "mem-011", "role": "member"}
+      ]
     },
     {
-      "id": "cell-kim",
-      "name": "김 셀",
-      "leaderId": "kim"
+      "id": "cell-002", 
+      "number": 2,
+      "name": "정민수셀",
+      "leaderId": "mem-004",
+      "members": [
+        {"memberId": "mem-004", "role": "leader"},
+        {"memberId": "mem-005", "role": "member"},
+        {"memberId": "mem-006", "role": "member"},
+        {"memberId": "mem-012", "role": "member"}
+      ]
     },
     {
-      "id": "cell-jung",
-      "name": "정 셀",
-      "leaderId": "jung"
+      "id": "cell-003",
+      "number": 3,
+      "name": "윤서준셀",
+      "leaderId": "mem-007",
+      "members": [
+        {"memberId": "mem-007", "role": "leader"},
+        {"memberId": "mem-008", "role": "member"},
+        {"memberId": "mem-009", "role": "member"},
+        {"memberId": "mem-010", "role": "member"}
+      ]
     }
   ]
 }

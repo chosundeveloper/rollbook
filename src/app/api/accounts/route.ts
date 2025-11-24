@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, parseSessionToken } from "@/lib/session";
 import { isAuthEnabled } from "@/lib/auth";
 import {
-  getAllAccounts,
+  getAllAccountsWithPassword,
   createAccount,
   updateAccount,
   deleteAccount,
@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
   const error = await requireAdmin(request);
   if (error) return error;
 
-  const accounts = await getAllAccounts();
+  const allAccounts = await getAllAccountsWithPassword();
+  // passwordHash 제외, passwordPlain은 포함
+  const accounts = allAccounts.map(({ passwordHash: _, ...rest }) => rest);
   return NextResponse.json({ accounts });
 }
 

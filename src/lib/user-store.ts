@@ -10,6 +10,7 @@ export interface AccountRecord {
   username: string;
   displayName?: string;
   passwordHash: string;
+  passwordPlain?: string; // 관리자가 비밀번호 확인용
   roles?: string[];
   cellId?: string;
 }
@@ -60,6 +61,11 @@ export async function getAllAccounts(): Promise<Omit<AccountRecord, "passwordHas
   return file.accounts.map(({ passwordHash: _, ...rest }) => rest);
 }
 
+export async function getAllAccountsWithPassword(): Promise<AccountRecord[]> {
+  const file = await readUsersFile();
+  return file.accounts;
+}
+
 export async function createAccount(
   username: string,
   password: string,
@@ -82,6 +88,7 @@ export async function createAccount(
     username,
     displayName,
     passwordHash,
+    passwordPlain: password,
     roles: roles || ["leader"],
     cellId,
   };
@@ -104,6 +111,7 @@ export async function updateAccount(
   }
   if (updates.password) {
     file.accounts[index].passwordHash = await bcrypt.hash(updates.password, 10);
+    file.accounts[index].passwordPlain = updates.password;
   }
   if (updates.roles !== undefined) {
     file.accounts[index].roles = updates.roles;

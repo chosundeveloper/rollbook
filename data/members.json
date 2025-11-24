@@ -1,3 +1,16 @@
 {
-  "members": []
+  "members": [
+    {"id": "mem-001", "name": "김철수", "birthYear": 1995, "role": "leader", "isActive": true, "joinedAt": "2023-01-15"},
+    {"id": "mem-002", "name": "이영희", "birthYear": 1997, "role": "member", "isActive": true, "joinedAt": "2023-02-20"},
+    {"id": "mem-003", "name": "박지민", "birthYear": 1996, "role": "member", "isActive": true, "joinedAt": "2023-03-10"},
+    {"id": "mem-004", "name": "정민수", "birthYear": 1998, "role": "leader", "isActive": true, "joinedAt": "2023-01-15"},
+    {"id": "mem-005", "name": "최수진", "birthYear": 1994, "role": "member", "isActive": true, "joinedAt": "2023-04-05"},
+    {"id": "mem-006", "name": "강다영", "birthYear": 1999, "role": "member", "isActive": true, "joinedAt": "2023-05-12"},
+    {"id": "mem-007", "name": "윤서준", "birthYear": 1993, "role": "leader", "isActive": true, "joinedAt": "2022-11-20"},
+    {"id": "mem-008", "name": "한미래", "birthYear": 2000, "role": "member", "isActive": true, "joinedAt": "2023-06-01"},
+    {"id": "mem-009", "name": "오현우", "birthYear": 1997, "role": "member", "isActive": true, "joinedAt": "2023-07-15"},
+    {"id": "mem-010", "name": "신예진", "birthYear": 1996, "role": "member", "isActive": true, "joinedAt": "2023-08-20"},
+    {"id": "mem-011", "name": "임성민", "birthYear": 1995, "role": "member", "isActive": true, "joinedAt": "2023-09-10"},
+    {"id": "mem-012", "name": "조은지", "birthYear": 1998, "role": "member", "isActive": true, "joinedAt": "2023-10-05"}
+  ]
 }

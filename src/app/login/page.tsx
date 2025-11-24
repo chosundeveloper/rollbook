@@ -33,6 +33,8 @@ function LoginForm() {
       const data = await response.json();
       console.log("Login success:", data);
       console.log("Redirecting to:", nextUrl);
+      // 쿠키 설정 후 약간의 딜레이
+      await new Promise(resolve => setTimeout(resolve, 100));
       window.location.href = nextUrl;
     } catch (err) {
       console.error("Login error:", err);
@@ -50,7 +52,7 @@ function LoginForm() {
         autoComplete="on"
       >
         <h1 className="text-2xl font-semibold text-slate-800">2청년부 출석부</h1>
-        <p className="mt-2 text-sm text-slate-500">부여된 아이디와 비밀번호로 로그인하세요.</p>
+        <p className="mt-2 text-sm text-slate-600">부여된 아이디와 비밀번호로 로그인하세요.</p>
         <label className="mt-6 block text-sm font-medium text-slate-700" htmlFor="username">
           아이디
         </label>
@@ -60,7 +62,7 @@ function LoginForm() {
           type="text"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
-          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-600 focus:border-sky-500 focus:outline-none"
           placeholder="example"
           autoComplete="username"
           required
@@ -74,7 +76,7 @@ function LoginForm() {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-600 focus:border-sky-500 focus:outline-none"
           placeholder="********"
           autoComplete="current-password"
           required
