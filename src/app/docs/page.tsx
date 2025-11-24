@@ -68,7 +68,7 @@ export default function DocsPage() {
                 <div className="mt-2 space-y-2 text-sm text-emerald-900">
                   <p>• 상단 드롭다운에서 <strong>출석부 날짜</strong>를 선택</p>
                   <p>• 각 셀원의 출석 상태 선택: <span className="rounded bg-emerald-200 px-1">오프라인</span> <span className="rounded bg-sky-200 px-1">온라인</span> <span className="rounded bg-rose-200 px-1">결석</span></p>
-                  <p>• 필요시 <strong>메모</strong>를 입력 (예: "다음 주 출장")</p>
+                  <p>• 필요시 <strong>메모</strong>를 입력 (예: &quot;다음 주 출장&quot;)</p>
                   <p>• <strong>출석 제출</strong> 버튼 클릭</p>
                 </div>
               </div>
