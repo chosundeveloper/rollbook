@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AUTH_DISABLED } from "@/lib/auth";
 import type { AttendanceEntry, AttendanceSession, CellRecord } from "@/types/attendance";
-import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
 interface CellWithAttendance {
@@ -31,7 +30,6 @@ export default function SessionDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const handleAuthFailure = useCallback(() => {
     if (!authEnabled) return;
@@ -145,36 +143,91 @@ export default function SessionDetailPage() {
     loadData();
   }, [loadData]);
 
-  const handleDownloadPDF = async () => {
-    if (!contentRef.current) return;
-
+  const handleDownloadPDF = () => {
     setDownloading(true);
     try {
-      const canvas = await html2canvas(contentRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 10;
+      // 한글 폰트 대신 기본 폰트 사용 (영문/숫자만 제대로 표시)
+      // 한글은 유니코드로 처리
+      let y = 20;
+      const lineHeight = 7;
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`출석부_${date}.pdf`);
+      // Title
+      pdf.setFontSize(18);
+      pdf.text(`${date} Attendance`, 105, y, { align: "center" });
+      y += 10;
+
+      if (session?.title) {
+        pdf.setFontSize(12);
+        pdf.text(session.title, 105, y, { align: "center" });
+        y += 10;
+      }
+
+      // Stats
+      pdf.setFontSize(11);
+      y += 5;
+      pdf.text(`Total: ${totalMembers} | Offline: ${totalOffline} | Online: ${totalOnline} | Absent: ${totalAbsent}`, 20, y);
+      y += lineHeight;
+      pdf.text(`Attendance Rate: ${totalMembers > 0 ? Math.round((totalAttended / totalMembers) * 100) : 0}%`, 20, y);
+      y += 15;
+
+      // Cell data
+      pdf.setFontSize(10);
+      for (const { cell, entries, stats } of cellsWithAttendance) {
+        // Check page break
+        if (y > pageHeight - 30) {
+          pdf.addPage();
+          y = 20;
+        }
+
+        pdf.setFontSize(12);
+        pdf.text(`${cell.number}Cell - ${cell.name} (Off:${stats.offline} On:${stats.online} Abs:${stats.absent})`, 20, y);
+        y += lineHeight;
+
+        pdf.setFontSize(9);
+        for (const entry of entries) {
+          if (y > pageHeight - 20) {
+            pdf.addPage();
+            y = 20;
+          }
+          const status = entry.status === "offline" ? "OFF" : entry.status === "online" ? "ON" : "ABS";
+          pdf.text(`  - ${entry.displayName}: ${status}${entry.note ? ` (${entry.note})` : ""}`, 25, y);
+          y += 5;
+        }
+        y += 5;
+      }
+
+      // Unassigned
+      if (unassignedEntries.length > 0) {
+        if (y > pageHeight - 30) {
+          pdf.addPage();
+          y = 20;
+        }
+        pdf.setFontSize(12);
+        pdf.text(`Visitors/Unassigned (${unassignedEntries.length})`, 20, y);
+        y += lineHeight;
+
+        pdf.setFontSize(9);
+        for (const entry of unassignedEntries) {
+          if (y > pageHeight - 20) {
+            pdf.addPage();
+            y = 20;
+          }
+          const status = entry.status === "offline" ? "OFF" : entry.status === "online" ? "ON" : "ABS";
+          pdf.text(`  - ${entry.displayName}${entry.isVisitor ? "(V)" : ""}: ${status}`, 25, y);
+          y += 5;
+        }
+      }
+
+      pdf.save(`attendance_${date}.pdf`);
     } catch (err) {
-      console.error("PDF 생성 실패:", err);
+      console.error("PDF error:", err);
       setError("PDF 생성에 실패했습니다.");
     } finally {
       setDownloading(false);
@@ -258,16 +311,8 @@ export default function SessionDetailPage() {
         </div>
       )}
 
-      {/* PDF Content Area */}
-      <div ref={contentRef} className="space-y-6 bg-white p-4 rounded-xl">
-        {/* PDF Header */}
-        <div className="text-center border-b border-slate-200 pb-4">
-          <h2 className="text-xl font-bold text-slate-800">{date} 출석부</h2>
-          {session?.title && <p className="text-sm text-slate-600">{session.title}</p>}
-        </div>
-
-        {/* Overall Stats Summary */}
-        <div className="grid gap-4 grid-cols-4">
+      {/* Overall Stats Summary */}
+      <div className="grid gap-4 sm:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm text-center print:shadow-none">
           <p className="text-3xl font-bold text-slate-700">{totalMembers}</p>
           <p className="text-sm text-slate-600">총 인원</p>
@@ -451,8 +496,6 @@ export default function SessionDetailPage() {
           )}
         </div>
       )}
-      </div>
-      {/* End PDF Content Area */}
 
       {/* Print Styles */}
       <style jsx global>{`
