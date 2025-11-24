@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AUTH_DISABLED } from "@/lib/auth";
 import type { AttendanceEntry, AttendanceSession, CellRecord } from "@/types/attendance";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 
 interface CellWithAttendance {
   cell: CellRecord;
@@ -28,6 +30,8 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const handleAuthFailure = useCallback(() => {
     if (!authEnabled) return;
@@ -141,8 +145,40 @@ export default function SessionDetailPage() {
     loadData();
   }, [loadData]);
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPDF = async () => {
+    if (!contentRef.current) return;
+
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(contentRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 10;
+
+      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`출석부_${date}.pdf`);
+    } catch (err) {
+      console.error("PDF 생성 실패:", err);
+      setError("PDF 생성에 실패했습니다.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   // Overall stats
@@ -194,10 +230,11 @@ export default function SessionDetailPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handlePrint}
-            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            PDF 다운로드/인쇄
+            {downloading ? "PDF 생성중..." : "PDF 다운로드"}
           </button>
           <Link
             href="/admin"
@@ -207,12 +244,6 @@ export default function SessionDetailPage() {
           </Link>
         </div>
       </header>
-
-      {/* Print Header */}
-      <div className="hidden print:block">
-        <h1 className="text-2xl font-bold">{date} 출석부</h1>
-        {session?.title && <p className="text-sm text-slate-600">{session.title}</p>}
-      </div>
 
       {/* Messages */}
       {(error || message) && (
@@ -227,8 +258,16 @@ export default function SessionDetailPage() {
         </div>
       )}
 
-      {/* Overall Stats Summary */}
-      <div className="grid gap-4 sm:grid-cols-4 print:grid-cols-4">
+      {/* PDF Content Area */}
+      <div ref={contentRef} className="space-y-6 bg-white p-4 rounded-xl">
+        {/* PDF Header */}
+        <div className="text-center border-b border-slate-200 pb-4">
+          <h2 className="text-xl font-bold text-slate-800">{date} 출석부</h2>
+          {session?.title && <p className="text-sm text-slate-600">{session.title}</p>}
+        </div>
+
+        {/* Overall Stats Summary */}
+        <div className="grid gap-4 grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm text-center print:shadow-none">
           <p className="text-3xl font-bold text-slate-700">{totalMembers}</p>
           <p className="text-sm text-slate-600">총 인원</p>
@@ -412,6 +451,8 @@ export default function SessionDetailPage() {
           )}
         </div>
       )}
+      </div>
+      {/* End PDF Content Area */}
 
       {/* Print Styles */}
       <style jsx global>{`
