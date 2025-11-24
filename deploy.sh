@@ -1,20 +1,27 @@
 #!/bin/bash
-# 무중단 배포 스크립트
-# 빌드가 완료될 때까지 기존 컨테이너 유지
+# Rollbook 자동 배포 스크립트
 
 set -e
 
-echo "=== 1. 이미지 빌드 (기존 컨테이너 유지) ==="
-docker-compose build
+echo "🚀 Rollbook 배포 시작..."
+echo "================================"
 
-echo "=== 2. 새 컨테이너로 교체 ==="
-docker-compose up -d --no-build --force-recreate
+# 1. 로컬 빌드
+echo "🔨 빌드 중..."
+npm run build
 
-echo "=== 3. 배포 확인 대기 ==="
-sleep 5
+# 2. 빌드 결과물 전송
+echo "📦 빌드 파일 전송 중..."
+sshpass -p '1234' rsync -avz --delete .next/ john@172.30.1.46:~/rollbook/.next/
 
-if docker exec rollbook wget -q --spider http://127.0.0.1:3000/login; then
-  echo "=== 배포 완료! ==="
-else
-  echo "=== 경고: 헬스체크 실패 ==="
-fi
+echo "📄 소스 파일 전송 중..."
+sshpass -p '1234' rsync -avz src/ john@172.30.1.46:~/rollbook/src/
+
+# 3. Docker 재시작
+echo "🔄 서버 재시작 중..."
+sshpass -p '1234' ssh -o StrictHostKeyChecking=no john@172.30.1.46 "cd ~/rollbook && docker-compose restart"
+
+echo ""
+echo "✅ 배포 완료!"
+echo "================================"
+echo "확인: http://172.30.1.46/"
