@@ -140,6 +140,12 @@ export default function AdminCellsPage() {
 
     try {
       const res = await fetch(`/api/cells?id=${cellId}`, { method: "DELETE" });
+
+      if (authEnabled && res.status === 401) {
+        handleAuthFailure();
+        return;
+      }
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.message || "셀 삭제 실패");
@@ -150,7 +156,7 @@ export default function AdminCellsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "셀 삭제 오류");
     }
-  }, [loadData]);
+  }, [authEnabled, handleAuthFailure, loadData]);
 
   const handleAddMember = useCallback(async (cellId: string) => {
     if (!selectedMember) {
