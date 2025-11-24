@@ -4,7 +4,18 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AUTH_DISABLED } from "@/lib/auth";
-import type { AttendanceEntry, AttendanceSession } from "@/types/attendance";
+import type { AttendanceEntry, AttendanceSession, CellRecord } from "@/types/attendance";
+
+interface CellWithAttendance {
+  cell: CellRecord;
+  entries: AttendanceEntry[];
+  stats: {
+    online: number;
+    offline: number;
+    absent: number;
+    total: number;
+  };
+}
 
 export default function SessionDetailPage() {
   const params = useParams();
@@ -12,7 +23,8 @@ export default function SessionDetailPage() {
   const authEnabled = !AUTH_DISABLED;
 
   const [session, setSession] = useState<AttendanceSession | null>(null);
-  const [entries, setEntries] = useState<AttendanceEntry[]>([]);
+  const [cellsWithAttendance, setCellsWithAttendance] = useState<CellWithAttendance[]>([]);
+  const [unassignedEntries, setUnassignedEntries] = useState<AttendanceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -33,10 +45,11 @@ export default function SessionDetailPage() {
     setError(null);
 
     try {
-      // Load sessions and attendance in parallel
-      const [sessionsRes, attendanceRes] = await Promise.all([
+      // Load sessions, attendance, and cells in parallel
+      const [sessionsRes, attendanceRes, cellsRes] = await Promise.all([
         fetch("/api/sessions"),
         fetch(`/api/attendance?date=${date}`),
+        fetch("/api/cells"),
       ]);
 
       if (authEnabled && sessionsRes.status === 401) {
@@ -47,7 +60,6 @@ export default function SessionDetailPage() {
       if (!sessionsRes.ok) throw new Error("출석부 목록을 불러오지 못했습니다.");
 
       const sessionsData = await sessionsRes.json();
-
       const foundSession = sessionsData.sessions.find(
         (s: AttendanceSession) => s.date === date
       );
@@ -60,13 +72,64 @@ export default function SessionDetailPage() {
 
       setSession(foundSession);
 
-      // Attendance data (might be empty or error if no data)
+      // Get attendance entries
+      let entries: AttendanceEntry[] = [];
       if (attendanceRes.ok) {
         const attendanceData = await attendanceRes.json();
-        setEntries(attendanceData.entries || []);
-      } else {
-        setEntries([]);
+        entries = attendanceData.entries || [];
       }
+
+      // Get cells
+      let cells: CellRecord[] = [];
+      if (cellsRes.ok) {
+        const cellsData = await cellsRes.json();
+        cells = cellsData.cells || [];
+      }
+
+      // Build member to cell mapping
+      const memberToCellMap = new Map<string, CellRecord>();
+      for (const cell of cells) {
+        for (const member of cell.members || []) {
+          memberToCellMap.set(member.memberId, cell);
+        }
+      }
+
+      // Group entries by cell
+      const cellEntriesMap = new Map<string, AttendanceEntry[]>();
+      const unassigned: AttendanceEntry[] = [];
+
+      for (const entry of entries) {
+        if (entry.memberId && memberToCellMap.has(entry.memberId)) {
+          const cell = memberToCellMap.get(entry.memberId)!;
+          if (!cellEntriesMap.has(cell.id)) {
+            cellEntriesMap.set(cell.id, []);
+          }
+          cellEntriesMap.get(cell.id)!.push(entry);
+        } else {
+          unassigned.push(entry);
+        }
+      }
+
+      // Build cells with attendance data
+      const cellsWithAtt: CellWithAttendance[] = cells
+        .map((cell) => {
+          const cellEntries = cellEntriesMap.get(cell.id) || [];
+          return {
+            cell,
+            entries: cellEntries,
+            stats: {
+              online: cellEntries.filter((e) => e.status === "online").length,
+              offline: cellEntries.filter((e) => e.status === "offline").length,
+              absent: cellEntries.filter((e) => e.status === "absent").length,
+              total: cellEntries.length,
+            },
+          };
+        })
+        .filter((c) => c.entries.length > 0)
+        .sort((a, b) => a.cell.number - b.cell.number);
+
+      setCellsWithAttendance(cellsWithAtt);
+      setUnassignedEntries(unassigned);
     } catch (err) {
       setError(err instanceof Error ? err.message : "데이터 로드 실패");
     } finally {
@@ -82,12 +145,16 @@ export default function SessionDetailPage() {
     window.print();
   };
 
-  // Stats
-  const totalOnline = entries.filter((e) => e.status === "online").length;
-  const totalOffline = entries.filter((e) => e.status === "offline").length;
-  const totalAbsent = entries.filter((e) => e.status === "absent").length;
+  // Overall stats
+  const allEntries = [
+    ...cellsWithAttendance.flatMap((c) => c.entries),
+    ...unassignedEntries,
+  ];
+  const totalOnline = allEntries.filter((e) => e.status === "online").length;
+  const totalOffline = allEntries.filter((e) => e.status === "offline").length;
+  const totalAbsent = allEntries.filter((e) => e.status === "absent").length;
   const totalAttended = totalOnline + totalOffline;
-  const totalMembers = entries.length;
+  const totalMembers = allEntries.length;
 
   if (loading) {
     return (
@@ -130,7 +197,7 @@ export default function SessionDetailPage() {
             onClick={handlePrint}
             className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-500"
           >
-            🖨️ PDF 다운로드/인쇄
+            PDF 다운로드/인쇄
           </button>
           <Link
             href="/admin"
@@ -160,7 +227,7 @@ export default function SessionDetailPage() {
         </div>
       )}
 
-      {/* Stats Summary */}
+      {/* Overall Stats Summary */}
       <div className="grid gap-4 sm:grid-cols-4 print:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm text-center print:shadow-none">
           <p className="text-3xl font-bold text-slate-700">{totalMembers}</p>
@@ -203,64 +270,148 @@ export default function SessionDetailPage() {
         </div>
       )}
 
-      {/* Detailed Attendance Table - Printable */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm print:shadow-none print:border-0">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4">전체 출석 현황</h2>
+      {/* Cell-based Attendance */}
+      {cellsWithAttendance.length === 0 && unassignedEntries.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm text-center print:shadow-none">
+          <p className="text-slate-500">아직 제출된 출석 데이터가 없습니다.</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Each Cell */}
+          {cellsWithAttendance.map(({ cell, entries, stats }) => (
+            <div
+              key={cell.id}
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm print:shadow-none print:border print:break-inside-avoid"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-800">
+                  {cell.number}셀 - {cell.name}
+                </h2>
+                <div className="flex gap-2 text-xs">
+                  <span className="rounded bg-emerald-100 px-2 py-1 text-emerald-700">
+                    오프라인 {stats.offline}
+                  </span>
+                  <span className="rounded bg-sky-100 px-2 py-1 text-sky-700">
+                    온라인 {stats.online}
+                  </span>
+                  <span className="rounded bg-rose-100 px-2 py-1 text-rose-700">
+                    결석 {stats.absent}
+                  </span>
+                </div>
+              </div>
 
-        {entries.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-8">
-            아직 제출된 출석 데이터가 없습니다.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-200 px-3 py-2 text-left">번호</th>
-                  <th className="border border-slate-200 px-3 py-2 text-left">이름</th>
-                  <th className="border border-slate-200 px-3 py-2 text-center">상태</th>
-                  <th className="border border-slate-200 px-3 py-2 text-left">메모</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry, idx) => (
-                  <tr key={entry.id}>
-                    <td className="border border-slate-200 px-3 py-2 text-slate-500 text-center">
-                      {idx + 1}
-                    </td>
-                    <td className="border border-slate-200 px-3 py-2 text-slate-700">
-                      {entry.displayName}
-                      {entry.isVisitor && (
-                        <span className="ml-1 text-xs text-purple-600">(방문)</span>
-                      )}
-                    </td>
-                    <td className="border border-slate-200 px-3 py-2 text-center">
-                      {entry.status === "offline" && (
-                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                          오프라인
-                        </span>
-                      )}
-                      {entry.status === "online" && (
-                        <span className="rounded bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
-                          온라인
-                        </span>
-                      )}
-                      {entry.status === "absent" && (
-                        <span className="rounded bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
-                          결석
-                        </span>
-                      )}
-                    </td>
-                    <td className="border border-slate-200 px-3 py-2 text-slate-500 text-xs">
-                      {entry.note || "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="border border-slate-200 px-3 py-2 text-left w-12">번호</th>
+                      <th className="border border-slate-200 px-3 py-2 text-left">이름</th>
+                      <th className="border border-slate-200 px-3 py-2 text-center w-24">상태</th>
+                      <th className="border border-slate-200 px-3 py-2 text-left">메모</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((entry, idx) => (
+                      <tr key={entry.id}>
+                        <td className="border border-slate-200 px-3 py-2 text-slate-500 text-center">
+                          {idx + 1}
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-slate-700">
+                          {entry.displayName}
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-center">
+                          {entry.status === "offline" && (
+                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                              오프라인
+                            </span>
+                          )}
+                          {entry.status === "online" && (
+                            <span className="rounded bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+                              온라인
+                            </span>
+                          )}
+                          {entry.status === "absent" && (
+                            <span className="rounded bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                              결석
+                            </span>
+                          )}
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-slate-500 text-xs">
+                          {entry.note || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+
+          {/* Unassigned / Visitors */}
+          {unassignedEntries.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm print:shadow-none print:border print:break-inside-avoid">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-800">
+                  미배정 / 방문자
+                </h2>
+                <div className="flex gap-2 text-xs">
+                  <span className="rounded bg-slate-100 px-2 py-1 text-slate-700">
+                    {unassignedEntries.length}명
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="border border-slate-200 px-3 py-2 text-left w-12">번호</th>
+                      <th className="border border-slate-200 px-3 py-2 text-left">이름</th>
+                      <th className="border border-slate-200 px-3 py-2 text-center w-24">상태</th>
+                      <th className="border border-slate-200 px-3 py-2 text-left">메모</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unassignedEntries.map((entry, idx) => (
+                      <tr key={entry.id}>
+                        <td className="border border-slate-200 px-3 py-2 text-slate-500 text-center">
+                          {idx + 1}
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-slate-700">
+                          {entry.displayName}
+                          {entry.isVisitor && (
+                            <span className="ml-1 text-xs text-purple-600">(방문)</span>
+                          )}
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-center">
+                          {entry.status === "offline" && (
+                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                              오프라인
+                            </span>
+                          )}
+                          {entry.status === "online" && (
+                            <span className="rounded bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+                              온라인
+                            </span>
+                          )}
+                          {entry.status === "absent" && (
+                            <span className="rounded bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                              결석
+                            </span>
+                          )}
+                        </td>
+                        <td className="border border-slate-200 px-3 py-2 text-slate-500 text-xs">
+                          {entry.note || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Print Styles */}
       <style jsx global>{`
