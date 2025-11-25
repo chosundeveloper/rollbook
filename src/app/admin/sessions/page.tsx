@@ -76,12 +76,14 @@ export default function AdminSessionsPage() {
         }),
       });
 
+      const data = await res.json();
+
       if (authEnabled && res.status === 401) {
-        handleAuthFailure();
+        setError("세션이 만료되었습니다. 다시 로그인해 주세요.");
+        setTimeout(() => handleAuthFailure(), 2000);
         return;
       }
 
-      const data = await res.json();
       if (!res.ok) {
         throw new Error(data.message || "출석부 생성 실패");
       }

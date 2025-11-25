@@ -59,6 +59,19 @@ export default function AdminMembersPage() {
       return;
     }
 
+    if (newBirthYear.trim()) {
+      const year = parseInt(newBirthYear.trim(), 10);
+      const currentYear = new Date().getFullYear();
+      if (year > currentYear) {
+        setError("생년은 현재 연도보다 클 수 없습니다.");
+        return;
+      }
+      if (year < 1900) {
+        setError("생년은 1900년 이후여야 합니다.");
+        return;
+      }
+    }
+
     setCreating(true);
     setError(null);
 

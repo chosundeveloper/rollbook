@@ -48,7 +48,7 @@ export default async function AdminPage() {
         </div>
 
         {/* Navigation Grid */}
-        <nav className="grid grid-cols-3 gap-2">
+        <nav className="grid grid-cols-4 gap-2">
           <Link
             href="/admin/sessions"
             className="flex flex-col items-center gap-1.5 rounded-xl bg-sky-50 p-3 text-sky-700 transition hover:bg-sky-100 active:scale-95"
@@ -91,18 +91,14 @@ export default async function AdminPage() {
             <span className="text-xl">📖</span>
             <span className="text-xs font-medium">도움말</span>
           </Link>
-        </nav>
-
-        {/* Bug Report - Separate subtle link */}
-        <div className="mt-3 text-center">
           <Link
-            href="/bugs"
-            className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-rose-500 transition"
+            href="/admin/feedback"
+            className="flex flex-col items-center gap-1.5 rounded-xl bg-rose-50 p-3 text-rose-700 transition hover:bg-rose-100 active:scale-95"
           >
-            <span>🐛</span>
-            <span>버그 리포트</span>
+            <span className="text-xl">📬</span>
+            <span className="text-xs font-medium">피드백</span>
           </Link>
-        </div>
+        </nav>
       </header>
 
       {/* Attendance Sessions */}
