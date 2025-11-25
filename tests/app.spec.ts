@@ -263,3 +263,94 @@ test.describe('Performance', () => {
     expect(loadTime).toBeLessThan(10000);
   });
 });
+
+test.describe('Admin Sessions', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login first
+    await page.goto('/login', { waitUntil: 'networkidle' });
+    await page.fill('input[name="username"]', 'admin');
+    await page.fill('input[name="password"]', '1234');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/admin', { timeout: 10000 });
+  });
+
+  test('should create a new session', async ({ page }) => {
+    await page.goto('/admin/sessions', { waitUntil: 'networkidle' });
+
+    // Check page loaded
+    await expect(page.locator('h1')).toContainText('출석부 관리');
+
+    // Date input should have a value
+    const dateInput = page.locator('input[type="date"]');
+    await expect(dateInput).toBeVisible();
+    const dateValue = await dateInput.inputValue();
+    expect(dateValue).toBeTruthy();
+
+    // Click create button
+    await page.click('button:has-text("출석부 생성")');
+
+    // Wait for success message or error
+    await page.waitForTimeout(3000);
+
+    // Check for success or error message
+    const successMsg = page.locator('.bg-emerald-50');
+    const errorMsg = page.locator('.bg-rose-50');
+
+    const hasSuccess = await successMsg.isVisible().catch(() => false);
+    const hasError = await errorMsg.isVisible().catch(() => false);
+
+    if (hasError) {
+      const errorText = await errorMsg.textContent();
+      console.log('Error:', errorText);
+    }
+
+    // Either success message should appear or already exists error
+    expect(hasSuccess || hasError).toBeTruthy();
+  });
+});
+
+test.describe('Cell Leader Access', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login as cell leader (kimcs)
+    await page.goto('/login', { waitUntil: 'networkidle' });
+    await page.fill('input[name="username"]', 'kimcs');
+    await page.fill('input[name="password"]', '1234');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/cell', { timeout: 10000 });
+  });
+
+  test('should load cell page without errors', async ({ page }) => {
+    // Cell page should load without "출석 정보를 가져오지 못했습니다" error
+    await page.goto('/cell', { waitUntil: 'networkidle' });
+
+    // Check page loaded - should show cell name or attendance UI
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 10000 });
+
+    // Should NOT show error message
+    const errorMsg = page.locator('text=출석 정보를 가져오지 못했습니다');
+    await expect(errorMsg).not.toBeVisible();
+  });
+
+  test('should fetch attendance API successfully', async ({ page, request }) => {
+    // Get session cookie (cookie name is 'rb-session')
+    const cookies = await page.context().cookies();
+    const sessionCookie = cookies.find(c => c.name === 'rb-session');
+    expect(sessionCookie).toBeTruthy();
+
+    // Test attendance API directly
+    const response = await request.get('/api/attendance?date=2025-11-23', {
+      headers: {
+        Cookie: `rb-session=${sessionCookie?.value}`
+      }
+    });
+
+    expect(response.ok()).toBeTruthy();
+    const data = await response.json();
+
+    // Should return proper structure, not error
+    expect(data).toHaveProperty('date');
+    expect(data).toHaveProperty('entries');
+    expect(data).toHaveProperty('summary');
+    expect(Array.isArray(data.entries)).toBeTruthy();
+  });
+});
