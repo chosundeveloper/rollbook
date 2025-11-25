@@ -56,6 +56,7 @@ export async function createBug(payload: CreateBugPayload): Promise<BugReport> {
     description: payload.description,
     status: "open",
     priority: payload.priority || "medium",
+    type: payload.type || "bug",
     reporter: payload.reporter,
     createdAt: now,
     updatedAt: now,
@@ -83,6 +84,8 @@ export async function updateBug(payload: UpdateBugPayload): Promise<BugReport | 
     description: payload.description ?? existingBug.description,
     status: payload.status ?? existingBug.status,
     priority: payload.priority ?? existingBug.priority,
+    type: payload.type ?? existingBug.type ?? "bug",
+    adminNote: payload.adminNote ?? existingBug.adminNote,
     updatedAt: now,
   };
 
