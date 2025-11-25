@@ -119,7 +119,8 @@ async function ensureSessionExists(date: string) {
 export async function getAttendanceByDate(date: string): Promise<AttendanceEntry[]> {
   const normalized = normalizeDate(date);
   const file = await readJsonFile<AttendanceFile>(attendanceFilePath, DEFAULT_ATTENDANCE);
-  return file.entries.filter((entry) => entry.date === normalized);
+  const entries = file.entries || [];
+  return entries.filter((entry) => entry.date === normalized);
 }
 
 async function resolveDisplayName(entry: AttendancePayloadEntry): Promise<string> {
@@ -142,7 +143,8 @@ export async function replaceAttendanceForDate(
   const normalized = normalizeDate(date);
   await ensureSessionExists(normalized);
   const file = await readJsonFile<AttendanceFile>(attendanceFilePath, DEFAULT_ATTENDANCE);
-  const others = file.entries.filter((entry) => entry.date !== normalized);
+  const existingEntries = file.entries || [];
+  const others = existingEntries.filter((entry) => entry.date !== normalized);
   const nowIso = new Date().toISOString();
 
   const normalizedEntries: AttendanceEntry[] = await Promise.all(
