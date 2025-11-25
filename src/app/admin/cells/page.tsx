@@ -234,27 +234,28 @@ export default function AdminCellsPage() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-6 px-3 pb-6 pt-4 sm:px-6">
-      <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="mx-auto max-w-4xl space-y-5 px-4 pb-6 pt-4">
+      {/* Header */}
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">셀 관리</h1>
-          <p className="text-sm text-slate-600">셀장을 선택하면 셀이 자동 생성됩니다.</p>
+          <h1 className="text-xl font-bold text-slate-900">셀 관리</h1>
+          <p className="text-xs text-slate-500 mt-0.5">셀장을 선택하면 셀이 자동 생성됩니다</p>
         </div>
         <Link
           href="/admin"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+          className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-200 active:scale-95"
         >
-          홈으로
+          ← 홈
         </Link>
       </header>
 
       {/* Messages */}
       {(error || message) && (
         <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
+          className={`rounded-xl px-4 py-3 text-sm ${
             error
-              ? "border-rose-300 bg-rose-50 text-rose-700"
-              : "border-emerald-300 bg-emerald-50 text-emerald-700"
+              ? "bg-rose-50 text-rose-700"
+              : "bg-emerald-50 text-emerald-700"
           }`}
         >
           {error || message}
@@ -262,16 +263,16 @@ export default function AdminCellsPage() {
       )}
 
       {/* Create Cell Form */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-800">새 셀 생성</h2>
-        <p className="text-sm text-slate-600">셀장을 선택하면 &quot;OOO셀&quot;로 자동 생성됩니다.</p>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <label className="flex-1 text-sm text-slate-700">
-            <span className="mb-1 block font-medium">셀장 선택 *</span>
+      <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+        <h2 className="text-base font-bold text-slate-800 mb-1">새 셀 생성</h2>
+        <p className="text-xs text-slate-500 mb-4">셀장을 선택하면 &quot;OOO셀&quot;로 자동 생성됩니다</p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1.5 block">셀장 선택</label>
             <select
               value={newCellLeader}
               onChange={(e) => setNewCellLeader(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-violet-500 focus:bg-white focus:outline-none transition"
             >
               <option value="">셀장 선택...</option>
               {availableLeaders.map((m) => (
@@ -280,20 +281,18 @@ export default function AdminCellsPage() {
                 </option>
               ))}
             </select>
-          </label>
-          <div className="sm:flex sm:flex-col sm:justify-end">
-            <button
-              type="button"
-              onClick={handleCreateCell}
-              disabled={creating || !newCellLeader}
-              className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {creating ? "생성 중..." : "셀 생성"}
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={handleCreateCell}
+            disabled={creating || !newCellLeader}
+            className="w-full rounded-xl bg-violet-500 py-3 text-sm font-semibold text-white transition hover:bg-violet-600 active:scale-[0.98] disabled:opacity-60"
+          >
+            {creating ? "생성 중..." : "셀 생성"}
+          </button>
         </div>
         {availableLeaders.length === 0 && (
-          <p className="mt-2 text-sm text-amber-600">
+          <p className="mt-3 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
             셀장으로 배정 가능한 멤버가 없습니다. 교인 관리에서 역할이 &quot;셀장&quot;인 멤버를 등록하세요.
           </p>
         )}
@@ -301,106 +300,113 @@ export default function AdminCellsPage() {
 
       {/* Unassigned Members Info */}
       {unassignedMembers.length > 0 && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-          미배정 멤버: {unassignedMembers.map((m) => m.name).join(", ")} ({unassignedMembers.length}명)
+        <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <span className="font-medium">미배정 멤버:</span> {unassignedMembers.map((m) => m.name).join(", ")} ({unassignedMembers.length}명)
         </div>
       )}
 
       {/* Cell List */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-slate-800">셀 목록</h2>
-          <span className="text-sm text-slate-600">{cells.length}개</span>
+      <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-slate-800">셀 목록</h2>
+          <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-700">{cells.length}개</span>
         </div>
 
         {cells.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">생성된 셀이 없습니다.</p>
+          <div className="rounded-xl bg-slate-50 p-8 text-center">
+            <div className="text-4xl mb-3">🏠</div>
+            <p className="text-slate-600 font-medium">셀이 없습니다</p>
+            <p className="text-sm text-slate-400 mt-1">위에서 새 셀을 만들어 보세요</p>
+          </div>
         ) : (
-          <div className="mt-4 space-y-4">
+          <div className="space-y-3">
             {cells.map((cell) => {
               const leader = cell.roster.find((r) => r.role === "leader");
               const cellMembers = cell.roster.filter((r) => r.role !== "leader");
 
               return (
-                <div key={cell.id} className="rounded-lg border border-slate-100 p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-800">
-                        {cell.number}셀 - {cell.name}
-                      </h3>
-                      <p className="text-sm text-slate-600">
-                        셀장: {leader?.member?.name || "없음"} / 셀원: {cellMembers.length}명
-                      </p>
+                <div key={cell.id} className="rounded-xl bg-slate-50 p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-violet-600 font-bold">
+                        {cell.number}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-800">{cell.name}</h3>
+                        <p className="text-xs text-slate-500">
+                          셀장: {leader?.member?.name || "없음"} · 셀원: {cellMembers.length}명
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleDeleteCell(cell.id, cell.name)}
-                      className="rounded-md border border-rose-300 px-2 py-1 text-xs text-rose-600 transition hover:border-rose-500"
+                      className="rounded-lg bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-200 active:scale-95"
                     >
                       삭제
                     </button>
                   </div>
 
                   {/* Members */}
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-700">셀원 목록</span>
+                  <div className="rounded-lg bg-white p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-slate-500">셀원 목록</span>
                       <button
                         type="button"
                         onClick={() => setAssigningCell(assigningCell === cell.id ? null : cell.id)}
-                        className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 transition hover:border-slate-500"
+                        className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-200"
                       >
-                        {assigningCell === cell.id ? "취소" : "셀원 추가"}
+                        {assigningCell === cell.id ? "취소" : "+ 추가"}
                       </button>
                     </div>
 
                     {assigningCell === cell.id && (
-                      <div className="mt-2 flex gap-2 rounded-lg border border-slate-100 bg-slate-50 p-2">
+                      <div className="mb-3 flex gap-2 rounded-lg bg-slate-50 p-2">
                         <select
                           value={selectedMember}
                           onChange={(e) => setSelectedMember(e.target.value)}
-                          className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-500 focus:outline-none"
                         >
                           <option value="">멤버 선택...</option>
                           {members
-                            .filter((m) => m.role !== "leader" && !cell.roster.some((r) => r.member?.id === m.id))
+                            .filter((m) => m.role !== "leader" && !cell.roster.some((r) => r.member?.id === m.id) && !assignedMemberIds.has(m.id))
                             .map((m) => (
                               <option key={m.id} value={m.id}>
-                                {m.name} {assignedMemberIds.has(m.id) ? "(다른 셀)" : ""}
+                                {m.name}
                               </option>
                             ))}
                         </select>
                         <button
                           type="button"
                           onClick={() => handleAddMember(cell.id)}
-                          className="rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-500"
+                          className="rounded-lg bg-violet-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-violet-600 active:scale-95"
                         >
                           추가
                         </button>
                       </div>
                     )}
 
-                    <ul className="mt-2 space-y-1">
+                    <ul className="space-y-1.5">
                       {cell.roster.map((entry) => (
                         <li
                           key={entry.member?.id}
-                          className="flex items-center justify-between rounded-lg border border-slate-50 px-3 py-2"
+                          className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2"
                         >
-                          <div>
-                            <span className="font-medium text-slate-700">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-700 text-sm">
                               {entry.member?.name || "미등록"}
                             </span>
                             <span
-                              className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                 entry.role === "leader"
-                                  ? "bg-sky-100 text-sky-700"
-                                  : "bg-slate-100 text-slate-600"
+                                  ? "bg-violet-100 text-violet-700"
+                                  : "bg-slate-200 text-slate-600"
                               }`}
                             >
                               {CELL_ROLE_LABEL[entry.role]}
                             </span>
                             {entry.member?.birthYear && (
-                              <span className="ml-2 text-xs text-slate-600">
+                              <span className="text-xs text-slate-400">
                                 {entry.member.birthYear}년생
                               </span>
                             )}
@@ -412,7 +418,7 @@ export default function AdminCellsPage() {
                                 entry.member &&
                                 handleRemoveMember(cell.id, entry.member.id, entry.member.name, entry.role === "leader")
                               }
-                              className="text-xs text-rose-500 hover:text-rose-600"
+                              className="text-xs text-rose-500 hover:text-rose-600 font-medium"
                             >
                               제외
                             </button>

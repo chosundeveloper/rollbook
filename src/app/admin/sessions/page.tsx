@@ -111,27 +111,28 @@ export default function AdminSessionsPage() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-6 px-3 pb-6 pt-4 sm:px-6">
-      <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="mx-auto max-w-4xl space-y-5 px-4 pb-6 pt-4">
+      {/* Header */}
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">출석부 관리</h1>
-          <p className="text-sm text-slate-600">출석부를 생성하고 관리하세요.</p>
+          <h1 className="text-xl font-bold text-slate-900">출석부 관리</h1>
+          <p className="text-xs text-slate-500 mt-0.5">출석부를 생성하고 관리하세요</p>
         </div>
         <Link
           href="/admin"
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 transition hover:border-slate-500"
+          className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-200 active:scale-95"
         >
-          홈으로
+          ← 홈
         </Link>
       </header>
 
       {/* Messages */}
       {(error || message) && (
         <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
+          className={`rounded-xl px-4 py-3 text-sm ${
             error
-              ? "border-rose-300 bg-rose-50 text-rose-700"
-              : "border-emerald-300 bg-emerald-50 text-emerald-700"
+              ? "bg-rose-50 text-rose-700"
+              : "bg-emerald-50 text-emerald-700"
           }`}
         >
           {error || message}
@@ -139,63 +140,72 @@ export default function AdminSessionsPage() {
       )}
 
       {/* Create Form */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-800">새 출석부 생성</h2>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <label className="flex-1 text-sm text-slate-600">
-            <span className="mb-1 block font-medium">예배 날짜 *</span>
+      <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+        <h2 className="text-base font-bold text-slate-800 mb-4">새 출석부 생성</h2>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1.5 block">예배 날짜</label>
             <input
               type="date"
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-sky-500 focus:bg-white focus:outline-none transition"
             />
-          </label>
-          <label className="flex-1 text-sm text-slate-600">
-            <span className="mb-1 block font-medium">설명 (선택)</span>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-500 mb-1.5 block">설명 (선택)</label>
             <input
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="예: 1주차 주일예배"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-sky-500 focus:bg-white focus:outline-none transition"
             />
-          </label>
-          <div className="flex items-end">
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={creating}
-              className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {creating ? "생성 중..." : "생성"}
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={creating}
+            className="w-full rounded-xl bg-sky-500 py-3 text-sm font-semibold text-white transition hover:bg-sky-600 active:scale-[0.98] disabled:opacity-60"
+          >
+            {creating ? "생성 중..." : "출석부 생성"}
+          </button>
         </div>
       </div>
 
       {/* Session List */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-slate-800">출석부 목록</h2>
-          <span className="text-sm text-slate-600">{sessions.length}개</span>
+      <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-slate-800">출석부 목록</h2>
+          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{sessions.length}개</span>
         </div>
         {sessions.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">생성된 출석부가 없습니다.</p>
+          <div className="rounded-xl bg-slate-50 p-8 text-center">
+            <div className="text-4xl mb-3">📋</div>
+            <p className="text-slate-600 font-medium">출석부가 없습니다</p>
+            <p className="text-sm text-slate-400 mt-1">위에서 새 출석부를 만들어 보세요</p>
+          </div>
         ) : (
-          <ul className="mt-4 space-y-2">
+          <ul className="space-y-2">
             {sessions.map((session) => (
-              <li
-                key={session.id}
-                className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3"
-              >
-                <div>
-                  <p className="font-medium text-slate-700">{session.date}</p>
-                  {session.title && <p className="text-sm text-slate-600">{session.title}</p>}
-                </div>
-                <span className="text-xs text-slate-600">
-                  {new Date(session.createdAt).toLocaleDateString("ko-KR")} 생성
-                </span>
+              <li key={session.id}>
+                <Link
+                  href={`/admin/sessions/${session.date}`}
+                  className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 transition hover:bg-sky-50 active:scale-[0.99]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+                      📅
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-700">{session.date}</p>
+                      <p className="text-xs text-slate-400">
+                        {session.title || new Date(session.createdAt).toLocaleDateString("ko-KR") + " 생성"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-slate-300 text-lg">›</span>
+                </Link>
               </li>
             ))}
           </ul>
