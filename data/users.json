@@ -1,39 +1,13 @@
 {
   "accounts": [
     {
-      "id": "acc-admin",
+      "id": "d9c1f8b0-6037-4c31-bad2-9c648a3cd5df",
       "username": "admin",
-      "displayName": "관리자",
-      "passwordHash": "$2a$10$FL.569mhP6eXZdM9uex4wOeSZb3tHt3sKa9Y49GuyyhTb9sI9GHA2",
-      "passwordPlain": "1234",
-      "roles": ["admin"]
-    },
-    {
-      "id": "acc-001",
-      "username": "kimcs",
-      "displayName": "김철수",
-      "passwordHash": "$2a$10$FL.569mhP6eXZdM9uex4wOeSZb3tHt3sKa9Y49GuyyhTb9sI9GHA2",
-      "passwordPlain": "1234",
-      "roles": ["leader"],
-      "cellId": "cell-001"
-    },
-    {
-      "id": "acc-002",
-      "username": "jungms",
-      "displayName": "정민수",
-      "passwordHash": "$2a$10$FL.569mhP6eXZdM9uex4wOeSZb3tHt3sKa9Y49GuyyhTb9sI9GHA2",
-      "passwordPlain": "1234",
-      "roles": ["leader"],
-      "cellId": "cell-002"
-    },
-    {
-      "id": "acc-003",
-      "username": "yoonsj",
-      "displayName": "윤서준",
-      "passwordHash": "$2a$10$FL.569mhP6eXZdM9uex4wOeSZb3tHt3sKa9Y49GuyyhTb9sI9GHA2",
-      "passwordPlain": "1234",
-      "roles": ["leader"],
-      "cellId": "cell-003"
+      "displayName": "admin",
+      "passwordHash": "$2a$10$7piFUI8WqeE69lCBtqMqMuG2mQilC7u1JaE78TyNH.iQ9dMqJY3fa",
+      "roles": [
+        "admin"
+      ]
     }
   ]
 }

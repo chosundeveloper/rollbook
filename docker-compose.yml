@@ -16,9 +16,14 @@ services:
       start_period: 30s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.rollbook.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.rollbook.entrypoints=web"
+      - "traefik.http.routers.rollbook.rule=Host(`rollbook.chosundev.cloud`)"
+      - "traefik.http.routers.rollbook.entrypoints=web,websecure"
+      - "traefik.http.routers.rollbook.tls=true"
+      - "traefik.http.routers.rollbook.tls.certresolver=letsencrypt"
       - "traefik.http.services.rollbook.loadbalancer.server.port=3000"
+      - "traefik.http.routers.rollbook-http.rule=Host(`rollbook.chosundev.cloud`)"
+      - "traefik.http.routers.rollbook-http.entrypoints=web"
+      - "traefik.http.routers.rollbook-http.middlewares=redirect-to-https@docker"
     networks:
       - traefik-network
 
