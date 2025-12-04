@@ -131,12 +131,6 @@ export default function AdminPrayerPage() {
     }
   }, [authEnabled, endDate, handleAuthFailure, name, startDate]);
 
-  const handleLogout = useCallback(async () => {
-    if (!authEnabled) return;
-    await fetch("/api/session", { method: "DELETE" });
-    handleAuthFailure();
-  }, [authEnabled, handleAuthFailure]);
-
   function formatDateRange(start: string, end: string): string {
     return `${start} ~ ${end}`;
   }

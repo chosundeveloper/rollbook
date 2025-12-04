@@ -213,11 +213,6 @@ export default function AdminCellsPage() {
     }
   }, [loadData]);
 
-  const handleLogout = useCallback(async () => {
-    if (!authEnabled) return;
-    await fetch("/api/session", { method: "DELETE" });
-    handleAuthFailure();
-  }, [authEnabled, handleAuthFailure]);
 
   // 미배정 멤버
   const assignedMemberIds = new Set(

@@ -110,12 +110,6 @@ export default function AdminMembersPage() {
     }
   }, [authEnabled, handleAuthFailure, loadMembers, newBirthYear, newName, newRole, newJoinedAt]);
 
-  const handleLogout = useCallback(async () => {
-    if (!authEnabled) return;
-    await fetch("/api/session", { method: "DELETE" });
-    handleAuthFailure();
-  }, [authEnabled, handleAuthFailure]);
-
   if (loading) {
     return (
       <section className="mx-auto max-w-4xl space-y-6 px-3 pb-6 pt-4 sm:px-6">

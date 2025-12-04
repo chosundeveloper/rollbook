@@ -119,18 +119,14 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
   const [prayerSchedules, setPrayerSchedules] = useState<PrayerSchedule[]>([]);
   const [prayerSchedulesLoading, setPrayerSchedulesLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [newSessionDate, setNewSessionDate] = useState<string>(getCurrentSunday());
-  const [newSessionTitle, setNewSessionTitle] = useState("");
-  const [creatingSession, setCreatingSession] = useState(false);
   const [statusMap, setStatusMap] = useState<Record<string, AttendanceStatus>>({});
   const [visitors, setVisitors] = useState<VisitorInput[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newVisitorName, setNewVisitorName] = useState("");
-  const [collapsedCells, setCollapsedCells] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
 
   const handleAuthFailure = useCallback(() => {
     if (!authEnabled) {
@@ -186,19 +182,6 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
     };
   }, [authEnabled, cellFilterId, handleAuthFailure]);
 
-  useEffect(() => {
-    setCollapsedCells((prev) => {
-      const next: Record<string, boolean> = {};
-      cells.forEach((cell) => {
-        next[cell.id] = prev[cell.id] ?? false;
-      });
-      return next;
-    });
-  }, [cells]);
-
-  const toggleCell = useCallback((cellId: string) => {
-    setCollapsedCells((prev) => ({ ...prev, [cellId]: !(prev[cellId] ?? false) }));
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -311,14 +294,12 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
       setStatusMap({});
       setNotes({});
       setVisitors([]);
-      setLoading(false);
       return () => {
         cancelled = true;
       };
     }
 
     async function loadAttendance() {
-      setLoading(true);
       setError(null);
       setStatusMap({});
       setNotes({});
@@ -341,9 +322,7 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
           setError(err instanceof Error ? err.message : "출석 조회 실패");
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        // cleanup
       }
     }
 
@@ -370,11 +349,6 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
       total,
     };
   }, [members, statusMap, visitors]);
-
-  const currentSession = useMemo(
-    () => sessions.find((session) => session.date === selectedDate) || null,
-    [selectedDate, sessions],
-  );
 
   const getCellSummary = useCallback(
     (cell: CellResponse) => {
@@ -431,53 +405,6 @@ export default function AttendanceBoard({ mode = "admin", cellFilterId }: Attend
     setNewVisitorName("");
     setError(null);
   }, [newVisitorName, selectedDate]);
-
-  const bulkUpdate = useCallback(
-    (status: AttendanceStatus) => {
-      const updated: Record<string, AttendanceStatus> = {};
-      members.forEach((member) => {
-        updated[member.id] = status;
-      });
-      setStatusMap(updated);
-    },
-    [members],
-  );
-
-  const handleCreateSession = useCallback(async () => {
-    if (!newSessionDate) {
-      setError("예배 날짜를 선택해 주세요.");
-      return;
-    }
-    setCreatingSession(true);
-    setMessage(null);
-    setError(null);
-    try {
-      const response = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: newSessionDate, title: newSessionTitle || undefined }),
-        credentials: "include",
-      });
-      const data = await response.json().catch(() => ({}));
-      if (authEnabled && response.status === 401) {
-        handleAuthFailure();
-        return;
-      }
-      if (!response.ok) {
-        throw new Error((data as { message?: string }).message || "출석부 생성에 실패했습니다.");
-      }
-      const session = data.session as AttendanceSession;
-      setSessions((prev) => sortSessions([...prev.filter((item) => item.id !== session.id), session]));
-      setSelectedDate(session.date);
-      setMessage("새 출석부가 생성되었습니다.");
-      setNewSessionTitle("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "출석부 생성 중 오류가 발생했습니다.");
-    } finally {
-      setCreatingSession(false);
-    }
-  }, [authEnabled, handleAuthFailure, newSessionDate, newSessionTitle]);
-
   const handleSave = useCallback(async () => {
     if (!selectedDate) {
       setError("출석부를 먼저 선택해 주세요.");

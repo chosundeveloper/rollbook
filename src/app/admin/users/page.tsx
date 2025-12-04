@@ -44,11 +44,11 @@ export default function AdminAccountsPage() {
   const [creating, setCreating] = useState(false);
 
   // 선택된 셀의 셀장 이름 가져오기
-  const getLeaderName = (cellId: string) => {
+  const getLeaderName = useCallback((cellId: string) => {
     const cell = cells.find((c) => c.id === cellId);
     const leader = cell?.roster?.find((r) => r.role === "leader");
     return leader?.member?.name || "";
-  };
+  }, [cells]);
 
   // Edit states
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -160,7 +160,7 @@ export default function AdminAccountsPage() {
     } finally {
       setCreating(false);
     }
-  }, [authEnabled, handleAuthFailure, loadData, newDisplayName, newPassword, newRole, newUsername, newCellId]);
+  }, [authEnabled, handleAuthFailure, loadData, newDisplayName, newPassword, newRole, newUsername, newCellId, getLeaderName]);
 
   const handleUpdate = useCallback(async (id: string) => {
     try {
@@ -207,12 +207,6 @@ export default function AdminAccountsPage() {
       setError(err instanceof Error ? err.message : "계정 삭제 오류");
     }
   }, [loadData]);
-
-  const handleLogout = useCallback(async () => {
-    if (!authEnabled) return;
-    await fetch("/api/session", { method: "DELETE" });
-    handleAuthFailure();
-  }, [authEnabled, handleAuthFailure]);
 
   if (loading) {
     return (
