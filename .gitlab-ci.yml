@@ -1,0 +1,118 @@
+stages:
+  - build
+  - push
+  - deploy
+  - monitor
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+build-image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "Building Docker image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE:latest
+  only:
+    - main
+    - master
+
+push-image:
+  stage: push
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - echo "Pushing image to registry: $CI_REGISTRY_IMAGE"
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+    - echo "✅ Image pushed successfully to $CI_REGISTRY_IMAGE"
+  only:
+    - main
+    - master
+
+deploy-production:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client sshpass
+    - ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts 2>/dev/null || true
+  script:
+    - |
+      sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER << 'DEPLOY_SCRIPT'
+        cd $DEPLOY_PATH
+        git fetch --all
+        git checkout main
+        git pull
+
+        # Deploy with docker-compose
+        docker compose down --remove-orphans
+        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+        docker compose pull
+        docker compose up -d
+
+        echo "✅ Deployment completed with image: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+      DEPLOY_SCRIPT
+  only:
+    - main
+    - master
+  dependencies:
+    - push-image
+
+monitor-logs:
+  stage: monitor
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client sshpass curl grep
+    - ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts 2>/dev/null || true
+  script:
+    - |
+      echo "📊 Starting log monitoring..."
+
+      # Fetch recent logs from container
+      RECENT_LOGS=$(sshpass -p "$DEPLOY_PASSWORD" ssh -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_SERVER "cd $DEPLOY_PATH && docker logs rollbook-app --tail 100 2>&1")
+
+      # Count auth failures
+      AUTH_FAILS=$(echo "$RECENT_LOGS" | grep -c '\[AUTH_FAIL\]' || true)
+
+      echo ""
+      echo "=== 🔍 로그 분석 결과 ==="
+      echo "인증 실패: $AUTH_FAILS건"
+
+      if [ "$AUTH_FAILS" -gt "0" ]; then
+        echo ""
+        echo "⚠️  인증 실패 내역:"
+        echo "$RECENT_LOGS" | grep '\[AUTH_FAIL\]' || true
+      fi
+
+      # Check for critical errors
+      ERRORS=$(echo "$RECENT_LOGS" | grep -i 'error' | grep -v 'DEBUG\|proxyError' || true)
+      if [ -n "$ERRORS" ]; then
+        echo ""
+        echo "❌ 에러 발견:"
+        echo "$ERRORS" | head -5
+      fi
+
+      # Check server status
+      SERVER_RUNNING=$(echo "$RECENT_LOGS" | grep -c 'Server is running' || true)
+      if [ "$SERVER_RUNNING" -gt "0" ]; then
+        echo ""
+        echo "✅ 서버 상태: 정상 운영 중"
+      fi
+
+      echo ""
+      echo "=== 📋 최근 로그 (마지막 10줄) ==="
+      echo "$RECENT_LOGS" | tail -10
+
+  only:
+    - main
+    - master
+  allow_failure: true

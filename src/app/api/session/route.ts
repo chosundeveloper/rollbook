@@ -21,7 +21,16 @@ export async function POST(request: NextRequest) {
   }
 
   const sessionToken = createSessionToken(account.username);
-  const response = NextResponse.json({ ok: true, user: { username: account.username, displayName: account.displayName } });
+  const userRole = account.roles && account.roles.length > 0 ? account.roles[0] : "member";
+  const response = NextResponse.json({
+    ok: true,
+    user: {
+      username: account.username,
+      displayName: account.displayName,
+      role: userRole
+    },
+    redirect: userRole === "admin" ? "/admin" : userRole === "leader" ? "/cell" : "/"
+  });
   response.cookies.set(SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
     sameSite: "lax",

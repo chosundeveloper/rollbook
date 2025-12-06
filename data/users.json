@@ -1,12 +1,21 @@
 {
   "accounts": [
     {
-      "id": "d9c1f8b0-6037-4c31-bad2-9c648a3cd5df",
+      "id": "123e4567-e89b-12d3-a456-426614174000",
       "username": "admin",
-      "displayName": "admin",
-      "passwordHash": "$2a$10$7piFUI8WqeE69lCBtqMqMuG2mQilC7u1JaE78TyNH.iQ9dMqJY3fa",
+      "displayName": "Admin User",
+      "passwordHash": "$2a$10$ixL1HQfxRrJ3IFXYXhoJeOjsa2azK4jLizXSZ/t5dBLXkh9cpep.q",
       "roles": [
         "admin"
+      ]
+    },
+    {
+      "id": "223e4567-e89b-12d3-a456-426614174001",
+      "username": "kimcs",
+      "displayName": "Kim Cell Leader",
+      "passwordHash": "$2a$10$Fg1lObiKRkRP8damCnEyoehJ4NMi9hHK0bMEim9YsWdl.GjwexR8O",
+      "roles": [
+        "leader"
       ]
     }
   ]

@@ -16,3 +16,200 @@ http:
       rateLimit:
         average: 100
         burst: 50
+
+  routers:
+    # 블로그 서비스
+    blog-router:
+      rule: "Host(`blog.local`) || Host(`blog.localhost`)"
+      service: blog-service
+      entryPoints:
+        - web
+
+    # 계산기 서비스
+    calculator-router:
+      rule: "Host(`calculator.local`) || Host(`calculator.localhost`)"
+      service: calculator-service
+      entryPoints:
+        - web
+
+    # 일기장 서비스
+    diary-router:
+      rule: "Host(`diary.local`) || Host(`diary.localhost`)"
+      service: diary-service
+      entryPoints:
+        - web
+
+    # 드럼 서비스
+    drum-router:
+      rule: "Host(`drum.local`) || Host(`drum.localhost`)"
+      service: drum-service
+      entryPoints:
+        - web
+
+    # 영어 학습 서비스
+    english-router:
+      rule: "Host(`english.local`) || Host(`english.localhost`)"
+      service: english-service
+      entryPoints:
+        - web
+
+    # 라이브 폴링 서비스
+    live-polling-router:
+      rule: "Host(`live-polling.local`) || Host(`live-polling.localhost`)"
+      service: live-polling-service
+      entryPoints:
+        - web
+
+    # 메모 서비스
+    memo-router:
+      rule: "Host(`memo.local`) || Host(`memo.localhost`)"
+      service: memo-service
+      entryPoints:
+        - web
+
+    # 메신저 서비스
+    messenger-router:
+      rule: "Host(`messenger.local`) || Host(`messenger.localhost`)"
+      service: messenger-service
+      entryPoints:
+        - web
+
+    # 핀볼 게임 서비스
+    pinball-router:
+      rule: "Host(`pinball.local`) || Host(`pinball.localhost`)"
+      service: pinball-service
+      entryPoints:
+        - web
+
+    # 롤북 서비스
+    rollbook-router:
+      rule: "Host(`rollbook.local`) || Host(`rollbook.localhost`)"
+      service: rollbook-service
+      entryPoints:
+        - web
+
+    # 날씨 서비스
+    weather-router:
+      rule: "Host(`weather.local`) || Host(`weather.localhost`)"
+      service: weather-service
+      entryPoints:
+        - web
+
+    # 커뮤니티 서비스
+    community-router:
+      rule: "Host(`community.local`) || Host(`community.localhost`)"
+      service: community-service
+      entryPoints:
+        - web
+
+    # 바나나 게임 서비스
+    banana-game-router:
+      rule: "Host(`banana-game.local`) || Host(`banana-game.localhost`) || Host(`banana_game.local`)"
+      service: banana-game-service
+      entryPoints:
+        - web
+
+    # 바나나 레일즈 서비스
+    banana-rails-router:
+      rule: "Host(`banana-rails.local`) || Host(`banana-rails.localhost`) || Host(`banana_rails.local`)"
+      service: banana-rails-service
+      entryPoints:
+        - web
+
+    # 바나나 메인 서비스
+    banana-router:
+      rule: "Host(`banana.local`) || Host(`banana.localhost`)"
+      service: banana-service
+      entryPoints:
+        - web
+
+  services:
+    # 블로그 서비스 (포트 3013)
+    blog-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3013"
+
+    # 계산기 서비스 (포트 3014)
+    calculator-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3014"
+
+    # 일기장 서비스 (포트 3016)
+    diary-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3016"
+
+    # 드럼 서비스 (포트 3017)
+    drum-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3017"
+
+    # 영어 학습 서비스 (포트 3018)
+    english-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3018"
+
+    # 라이브 폴링 서비스 (포트 3020)
+    live-polling-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3020"
+
+    # 메모 서비스 (포트 3022)
+    memo-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3022"
+
+    # 메신저 서비스 (포트 3023)
+    messenger-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3023"
+
+    # 핀볼 게임 서비스 (포트 3024)
+    pinball-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3024"
+
+    # 롤북 서비스 (포트 3027)
+    rollbook-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3027"
+
+    # 날씨 서비스 (포트 3029)
+    weather-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3029"
+
+    # 커뮤니티 서비스 (포트 3015)
+    community-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3015"
+
+    # 바나나 게임 서비스 (포트 3011)
+    banana-game-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3011"
+
+    # 바나나 레일즈 서비스 (포트 3012)
+    banana-rails-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3012"
+
+    # 바나나 메인 서비스 (포트 3010)
+    banana-service:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:3010"

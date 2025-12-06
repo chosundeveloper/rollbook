@@ -31,10 +31,12 @@ function LoginForm() {
       }
       const data = await response.json();
       console.log("Login success:", data);
-      console.log("Redirecting to:", nextUrl);
+      // API 응답에서 리다이렉트 URL을 받거나 nextUrl 사용
+      const redirectUrl = data.redirect || nextUrl || "/";
+      console.log("Redirecting to:", redirectUrl);
       // 쿠키 설정 후 약간의 딜레이
       await new Promise(resolve => setTimeout(resolve, 100));
-      window.location.href = nextUrl;
+      window.location.href = redirectUrl;
     } catch (err) {
       console.error("Login error:", err);
       setError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
